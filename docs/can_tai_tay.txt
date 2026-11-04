@@ -1,0 +1,77 @@
+DANH SÁCH DỮ LIỆU CẦN TẢI TAY
+Cập nhật: 02/11/2026. Script đã thử: scripts/crawl_missing.py (log: data/raw/blocked_2026-11-02.json)
+
+Lý do phải tải tay: data.cdc.gov và www2.census.gov trả lỗi 403 khi script chạy từ máy ở Việt Nam.
+Cần bật VPN đặt ở Mỹ rồi tải bằng trình duyệt.
+
+======================================================================
+CÁCH LƯU FILE (áp dụng cho mọi lần tải)
+======================================================================
+- Lưu vào: data/raw/<nguồn>/<YYYY-MM-DD>/  (YYYY-MM-DD = ngày tải), KHÔNG ghi đè file cũ.
+  Tên thư mục <nguồn>: nước thải = cdc_wastewater_wval, vaccine = cdc_fluvax_coverage,
+  Gazetteer = census_gazetteer.
+  Ví dụ: data/raw/cdc_wastewater_wval/2026-11-07/CDC_Wastewater_Viral_Activity_Level_..._20261107.csv
+- Giữ nguyên tên file CDC đặt.
+- Sau khi lưu, chạy: python scripts/register_manual.py --by "Tên người tải"
+  Script ghi file vào data/raw/manifest.jsonl (ngày tải, người tải, kích thước, sha256).
+- Lý do: file CDC không có lịch sử phiên bản, nên phải lưu từng bản mới biết số liệu bị sửa thế nào.
+
+======================================================================
+1. NƯỚC THẢI WVAL (cúm A) - TẢI HẰNG TUẦN
+======================================================================
+Tên bộ dữ liệu trên data.cdc.gov:
+  "CDC Wastewater Viral Activity Level for SARS-CoV-2, Influenza A and RSV"
+  (giống file nhóm đã tải ngày 01/11/2026)
+Cách tải: mở trang bộ dữ liệu > Export > CSV (tải cả file, không lọc).
+Dùng cho: RQ5 (lớp đối chiếu trên dashboard). KHÔNG bắt buộc: tuần nào không tải được
+  thì pipeline dùng NWSS của Delphi (tự động) thay thế.
+Lịch tải: thứ Bảy hằng tuần, sau bản cập nhật thứ Sáu của CDC.
+  Thứ Bảy 07/11/2026, Thứ Bảy 14/11/2026, Thứ Bảy 21/11/2026, Thứ Bảy 28/11/2026,
+  Thứ Bảy 05/12/2026, Thứ Bảy 12/12/2026, Thứ Bảy 19/12/2026, Thứ Bảy 26/12/2026,
+  Thứ Bảy 02/01/2027, Thứ Bảy 09/01/2027, Thứ Bảy 16/01/2027, Thứ Bảy 23/01/2027,
+  Thứ Bảy 30/01/2027, Thứ Bảy 06/02/2027, Thứ Bảy 13/02/2027, Thứ Bảy 20/02/2027,
+  Thứ Bảy 27/02/2027, Thứ Bảy 06/03/2027, Thứ Bảy 13/03/2027, Thứ Bảy 20/03/2027,
+  Thứ Bảy 27/03/2027, Thứ Bảy 03/04/2027, Thứ Bảy 10/04/2027, Thứ Bảy 17/04/2027,
+  Thứ Bảy 24/04/2027, Thứ Bảy 01/05/2027, Thứ Bảy 08/05/2027, Thứ Bảy 15/05/2027,
+  Thứ Bảy 22/05/2027, Thứ Bảy 29/05/2027
+  (29/05/2027 là sau tuần MMWR 20, hết cao điểm mùa 2026-27. Nếu project kết thúc
+  sớm hơn thì dừng ở tuần cuối cùng trước hạn nộp.)
+
+======================================================================
+2. ĐỘ PHỦ VACCINE CÚM - TẢI HẰNG THÁNG
+======================================================================
+Tên bộ dữ liệu trên data.cdc.gov:
+  "Influenza Vaccination Coverage for All Ages (6+ Months)"
+  (giống file nhóm đã tải ngày 01/11/2026)
+Cách tải: Export > CSV, tải cả file.
+Dùng cho: RQ4 (biến vaccine mùa 2026-27).
+Kiểm tra trước khi lưu: file mới đã có dòng Season/Survey Year = "2026-27" chưa.
+  Nếu chưa có thì vẫn lưu (để ghi nhận) và thử lại vào lần sau.
+CDC không công bố lịch cập nhật cố định; số liệu tháng mới thường ra chậm 1-2 tháng.
+Lịch tải: thứ Bảy đầu mỗi tháng
+  Thứ Bảy 05/12/2026, Thứ Bảy 02/01/2027, Thứ Bảy 06/02/2027, Thứ Bảy 06/03/2027,
+  Thứ Bảy 03/04/2027, Thứ Bảy 01/05/2027, Thứ Bảy 05/06/2027, Thứ Bảy 03/07/2027
+  (Bản 03/07/2027 dự kiến có số liệu đến tháng 5/2027 = độ phủ cuối mùa 2026-27.)
+
+======================================================================
+3. CENSUS GAZETTEER (tọa độ thành phố) - ĐÃ XONG 02/11/2026
+======================================================================
+Đã tải và lưu ở data/raw/census_gazetteer/2026-11-02/2024_Gaz_place_national.zip
+(đã ghi vào manifest). Dùng để tạo data/reference/cities.csv. Không cần tải lại,
+trừ khi muốn đổi sang bản Gazetteer năm mới hơn.
+
+======================================================================
+KHÔNG CẦN TẢI TAY NỮA
+======================================================================
+- Bảng ngưỡng mức độ nhập viện CDC theo bang: script đã tải được từ trang phương pháp HRD
+  (cdc.gov không bị chặn), lưu ở data/reference/cdc_level_thresholds.csv.
+  Tính lại mức độ từ tỷ lệ nhập viện khớp 100% với file mức độ của nhóm (1.539 dòng).
+  => File "Weekly Hospital Respiratory Admission Levels and Rates" (vdzy-6i9v) KHÔNG cần tải
+     hằng tuần; pipeline tự tính mức độ từ NHSN của Delphi.
+  => CDC nói ngưỡng được xem lại định kỳ: chạy lại scripts/crawl_missing.py mỗi tháng
+     để kiểm tra trang phương pháp có đổi không (tự động, không cần VPN).
+- NHSN HRD (ua7e-t2fy): trùng 100% với NHSN của Delphi, lấy tự động qua Delphi.
+- NSSP, ILINet, FluSurv-NET, xét nghiệm: lấy tự động qua Delphi.
+- EPA AirData PM2.5 2010-2026: script đã tải xong (file 2026 mới có đến 31/05/2026; EPA cập nhật
+  file năm hiện tại vài lần mỗi năm, nên chạy lại script vào đầu tháng 1/2027).
+- Dân số Census Vintage 2025 (bang và đô thị): nhóm đã tải, đủ dùng đến khi có Vintage 2026.
