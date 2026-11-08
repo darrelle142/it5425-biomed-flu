@@ -1,4 +1,6 @@
-# Du lieu: luu tren Hugging Face (DragonBornRay/FluDataset), tai bang scripts/download_data.py
+# Du lieu: luu tren Hugging Face (tdu175/FluDataset), tai bang scripts/download_data.py
+dataset/
+data/.gitattributes
 data/raw/
 data/samples/
 data/.cache/
