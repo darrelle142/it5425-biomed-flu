@@ -39,7 +39,7 @@ Dữ liệu giám sát cúm mùa theo bang × tuần MMWR ở Mỹ (50 bang + DC
 
 *US state × MMWR-week influenza surveillance data (ILINet, NHSN, NSSP, wastewater, weather, PM2.5, vaccination, population), raw snapshots plus joined tables.*
 
-Bản chụp: 01–04/11/2026 (thời tiết 236 thành phố hoàn tất 04/11/2026). Mọi bảng trong `samples/` dùng định nghĩa và ngưỡng **tạm** của nhóm. Đây là bảng thử, chưa phải bản phát hành cuối.
+Bản chụp đầu tiên 01–04/11/2026, cập nhật hằng tuần (mới nhất 09/11/2026: Delphi và WVAL đến tuần 31/10/2026; thời tiết đến 31/10/2026). Mọi bảng trong `samples/` dùng định nghĩa và ngưỡng **tạm** của nhóm. Đây là bảng thử, chưa phải bản phát hành cuối.
 
 ## Cấu trúc
 

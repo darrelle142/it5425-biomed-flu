@@ -36,7 +36,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 RAW = DATA / "raw"
 MANIFEST_IN_REPO = "raw/manifest.jsonl"  # duong dan trong repo Hugging Face (= data/ tren may)
-HF_REPO = os.environ.get("HF_REPO") or "tdu175/FluDataset"  # doi repo: bien moi truong HF_REPO
+HF_REPO = os.environ.get("HF_REPO") or "DragonBornRay/FluDataset"  # doi repo: bien moi truong HF_REPO
 NOW = dt.datetime.now(dt.timezone.utc)
 TODAY = NOW.date().isoformat()
 UA = "it5425-biomed-flu-crawler/1.0 (+https://github.com/darrelle142/it5425-biomed-flu)"

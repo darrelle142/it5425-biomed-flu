@@ -1,4 +1,4 @@
-"""Tai thu muc data/ tu Hugging Face ve may (mac dinh tdu175/FluDataset, doi bang --repo hoac HF_REPO).
+"""Tai thu muc data/ tu Hugging Face ve may (mac dinh DragonBornRay/FluDataset, doi bang --repo hoac HF_REPO).
 
 Cach chay (tu thu muc goc cua repo):
     python scripts/download_data.py            # tai tat ca (khoang 290 MB)
@@ -16,7 +16,7 @@ from huggingface_hub import snapshot_download
 ROOT = Path(__file__).resolve().parents[1]
 ap = argparse.ArgumentParser()
 ap.add_argument("--samples", action="store_true", help="chi tai samples/, reference/ va README")
-ap.add_argument("--repo", default=os.environ.get("HF_REPO") or "tdu175/FluDataset",
+ap.add_argument("--repo", default=os.environ.get("HF_REPO") or "DragonBornRay/FluDataset",
                 help="repo dataset tren Hugging Face (mac dinh: bien HF_REPO)")
 args = ap.parse_args()
 

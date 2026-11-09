@@ -33,7 +33,7 @@ Kế hoạch chi tiết: [`docs/ke_hoach_v2.docx`](docs/ke_hoach_v2.docx).
 └── docs/                     kế hoạch, yêu cầu môn học, hạn chế dữ liệu, lịch tải tay
 ```
 
-Dữ liệu lớn (khoảng 290 MB) nằm trên Hugging Face: [tdu175/FluDataset](https://huggingface.co/datasets/tdu175/FluDataset) (từ 08/11/2026; bản gốc ban đầu ở `DragonbornRay/FluDataset`). GitHub chỉ chứa mã, tài liệu và `data/reference/`.
+Dữ liệu lớn (khoảng 290 MB) nằm trên Hugging Face: [DragonBornRay/FluDataset](https://huggingface.co/datasets/DragonBornRay/FluDataset). GitHub chỉ chứa mã, tài liệu và `data/reference/`.
 
 ## Bắt đầu
 
@@ -76,7 +76,7 @@ Nếu workflow báo lỗi (job đỏ), dùng phương án dự phòng: bật VPN
 Sau khi crawl hoặc tải tay, chạy từ thư mục gốc của repo:
 
 ```powershell
-hf upload tdu175/FluDataset ./data . --repo-type dataset --exclude ".cache/*" --exclude "samples/preview_*" --exclude "samples/*_results.json" --exclude "sandbox/*" --commit-message "Cap nhat du lieu tuan ..."
+hf upload DragonBornRay/FluDataset ./data . --repo-type dataset --exclude ".cache/*" --exclude "samples/preview_*" --exclude "samples/*_results.json" --exclude "sandbox/*" --commit-message "Cap nhat du lieu tuan ..."
 ```
 
 ## Hạn chế dữ liệu

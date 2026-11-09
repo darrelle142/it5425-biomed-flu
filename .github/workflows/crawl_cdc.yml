@@ -1,7 +1,7 @@
 # Tai cac nguon CDC bi chan tu Viet Nam (WVAL, vaccine, trang nguong HRD) tu may chu GitHub o My,
 # roi day len Hugging Face. Ke hoach: docs/ke_hoach_tu_dong_crawl_cdc.md
 # Can secret HF_TOKEN (token Hugging Face quyen write tren repo dataset) va bien HF_REPO
-# (Settings > Secrets and variables > Actions > Variables), vi du: <user>/FluDataset.
+# (Settings > Secrets and variables > Actions > Variables), vi du: DragonBornRay/FluDataset.
 name: Tai nguon CDC (WVAL, vaccine, nguong)
 
 on:

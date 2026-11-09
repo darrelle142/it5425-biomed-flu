@@ -23,7 +23,7 @@ Kiểm tra ngày 08/11/2026 từ máy ở Việt Nam, không bật VPN, gọi đ
 | – | Ngày lễ, kỳ nghỉ | `holiday_week`, `weeks_to_holiday`; RQ4 | Tự tạo (`build_reference.py`) | Không cần mạng | – | – |
 | – | Dân số 2020 của Delphi (map tên bang) | Khóa bang | GitHub raw | ✅ | Cố định | – |
 
-Trạng thái Delphi ngày 08/11/2026 (metadata V5): ILINet, NHSN, NSSP, FluSurv, xét nghiệm và NWSS đều đang cập nhật, có số liệu đến tuần kết thúc **31/10/2026**. Đã cập nhật lên `tdu175/FluDataset` cùng ngày (mục 3).
+Trạng thái Delphi ngày 08/11/2026 (metadata V5): ILINet, NHSN, NSSP, FluSurv, xét nghiệm và NWSS đều đang cập nhật, có số liệu đến tuần kết thúc **31/10/2026**. Đã cập nhật lên Hugging Face cùng ngày (mục 3).
 
 **Kết luận:**
 
@@ -68,7 +68,7 @@ Quy tắc:
 - **Giữ định dạng cũ** (CSV không nén, tên file kiểu CDC) để `audit_data.py`, `profile_dataset.py`, `build_thresholds.py` đọc được ngay, không phải sửa.
 - **Manifest** giữ đúng các trường hiện có (`source`, `file`, `url`, `fetched_at`, `http_status`, `bytes`, `sha256`), thêm `dataset_id`, `rows_updated_at` (thời điểm CDC cập nhật dữ liệu, lấy từ metadata Socrata), `runner` (`github-actions` hoặc tên máy).
 - **Không thử vượt chặn.** Bị 403 thì ghi vào manifest và thoát với mã lỗi, đúng nguyên tắc của `crawl_missing.py`. User-Agent ghi rõ tên crawler của repo.
-- **Repo Hugging Face đổi được** bằng `--repo` hoặc biến môi trường `HF_REPO` (mặc định `tdu175/FluDataset`).
+- **Repo Hugging Face đổi được** bằng `--repo` hoặc biến môi trường `HF_REPO` (mặc định `DragonBornRay/FluDataset`).
 
 ### 2.2. Workflow `.github/workflows/crawl_cdc.yml`
 
@@ -78,26 +78,17 @@ Quy tắc:
 - Không cần checkout dữ liệu 290 MB: chỉ tải `manifest.jsonl` từ HF.
 - `concurrency` để hai lần chạy không ghi đè manifest của nhau; khi đẩy lên HF dùng `parent_commit`, nếu có người đẩy chen giữa thì commit thất bại thay vì ghi đè.
 
-## 3. Chuyển sang Hugging Face riêng: `tdu175/FluDataset`
+## 3. Repo Hugging Face chung: `DragonBornRay/FluDataset`
 
-**Đã xong ngày 08/11/2026.** Repo [tdu175/FluDataset](https://huggingface.co/datasets/tdu175/FluDataset) (public) được tạo và upload từ thư mục `data/` trên máy (bản tải từ `DragonbornRay/FluDataset`, chụp 01–04/11/2026). Đối chiếu: 541/541 file khớp sha256 với bản trên máy, có `raw/manifest.jsonl`, tổng khoảng 299 MB. `download_data.py` và `crawl_cdc_us.py` đã đổi mặc định sang repo này.
+**Chốt ngày 09/11/2026:** cả nhóm chỉ dùng [DragonBornRay/FluDataset](https://huggingface.co/datasets/DragonBornRay/FluDataset) (chủ repo: Hiếu). Mặc định trong `download_data.py`, `crawl_cdc_us.py`, README và workflow đều trỏ về repo này.
 
-**Cập nhật Delphi ngày 08/11/2026.** Chạy `crawl_sample.py delphi` (18/18 file HTTP 200, số liệu đến tuần kết thúc 31/10/2026), dựng lại `samples/` theo mục 9.3, `audit_data.py` không có dòng lỗi, rồi upload. Đối chiếu sau upload: 559/559 file khớp sha256. Khoảng 50 ô cũ được CDC sửa (chủ yếu 3–4 tuần gần nhất); thời tiết, EPA, WVAL, vaccine và bảng tra cứu không đổi. Thẻ dữ liệu `data/README.md` vẫn ghi "Bản chụp 01–04/11/2026", cần sửa ở lần upload sau.
-
-Lệnh đã dùng (chạy từ gốc repo, sau `hf auth login`):
-
-```bash
-.venv/bin/hf repos create tdu175/FluDataset --repo-type dataset --public
-.venv/bin/hf upload tdu175/FluDataset ./data . --repo-type dataset --exclude ".cache/*" --exclude "samples/preview_*" --exclude "samples/*_results.json" --exclude "sandbox/*"
-```
-
-Cách khác không cần máy (nếu sau này cần làm lại): Space [huggingface-projects/repo_duplicator](https://huggingface.co/spaces/huggingface-projects/repo_duplicator), đăng nhập bằng nút **Sign in with Hugging Face**, chọn loại `dataset`, nguồn và đích là tên repo.
+Lịch sử: từ 08/11 đến 09/11/2026 nhóm thử một repo riêng `tdu175/FluDataset` (cập nhật Delphi 08/11 và lượt chạy GitHub Actions đầu tiên 09/11). Ngày 09/11 toàn bộ file và dòng manifest của repo đó đã được gộp về `DragonBornRay/FluDataset` cùng bản cập nhật 07/11 trên máy Hiếu. Repo `tdu175/FluDataset` không còn được cập nhật; không đẩy dữ liệu lên đó nữa.
 
 **Bước 1: Tạo token cho GitHub Actions**
 
-1. **Settings → Access Tokens → Create new token**, chọn **Fine-grained**.
+1. Đăng nhập Hugging Face bằng tài khoản chủ repo (`DragonBornRay`), vào **Settings → Access Tokens → Create new token**, chọn **Fine-grained**.
 2. Token name: `github-actions-fludataset`.
-3. Mục **Repositories permissions**: tìm và chọn `tdu175/FluDataset`, tích **Write access to contents/settings of selected repos**. Không tích quyền nào khác.
+3. Mục **Repositories permissions**: tìm và chọn `DragonBornRay/FluDataset`, tích **Write access to contents/settings of selected repos**. Không tích quyền nào khác.
 4. Bấm **Create token** và chép token ngay (chỉ hiện một lần). Không dán token vào chat, mã nguồn hay file nào trong repo.
 
 **Bước 2: Khai báo cho GitHub (cần quyền admin repo GitHub)**
@@ -105,7 +96,7 @@ Cách khác không cần máy (nếu sau này cần làm lại): Space [huggingf
 Trên repo GitHub của nhóm: **Settings → Secrets and variables → Actions**.
 
 - Tab **Secrets → New repository secret**: Name `HF_TOKEN`, Secret là token vừa chép.
-- Tab **Variables → New repository variable**: Name `HF_REPO`, Value `tdu175/FluDataset`.
+- Tab **Variables → New repository variable**: Name `HF_REPO`, Value `DragonBornRay/FluDataset`.
 
 Nếu không thấy mục Settings thì bạn chưa có quyền admin; nhờ chủ repo (`darrelle142`) làm bước này.
 
@@ -117,12 +108,9 @@ GitHub chỉ hiện nút chạy tay khi file workflow đã có trên nhánh mặ
 2. Giữ `dry_run` được tích, bấm **Run workflow**. Mở lần chạy để xem bảng kết quả: 3 nguồn trả 200 nghĩa là máy chủ GitHub không bị CDC chặn.
 3. Chạy lại với `dry_run` bỏ tích. Xem trên repo Hugging Face: tab **Files and versions** có commit mới "Tu dong tai CDC ...".
 
-**Bước 4: Cả nhóm chuyển sang repo mới**
+**Bước 4: Cả nhóm dùng chung một repo**
 
-Mỗi người kéo nhánh mới nhất của repo GitHub rồi chạy `python scripts/download_data.py` (mặc định đã là `tdu175/FluDataset`).
-
-Lưu ý: hai repo độc lập. Nếu ai còn đẩy dữ liệu lên `DragonbornRay/FluDataset` thì repo mới không nhận được; báo Hiếu và cả nhóm từ nay chỉ đẩy lên `tdu175/FluDataset`.
-5. Cả nhóm tải dữ liệu từ repo mới: `python scripts/download_data.py --repo tdu175/FluDataset` (hoặc đặt `HF_REPO`). Khi chốt hẳn, đổi giá trị mặc định trong `download_data.py`, `crawl_cdc_us.py` và link trong `README.md`.
+Mỗi người kéo nhánh mới nhất của repo GitHub rồi chạy `python scripts/download_data.py` (mặc định là `DragonBornRay/FluDataset`). Chỉ đẩy dữ liệu lên repo này.
 
 ## 4. Việc cần làm
 
@@ -133,9 +121,9 @@ Lưu ý: hai repo độc lập. Nếu ai còn đẩy dữ liệu lên `Dragonbor
 | 3 | Chạy thử trên máy: dry-run thật từ Việt Nam (WVAL, vaccine báo lỗi 403 đúng cách, trang ngưỡng 200, không ghi gì); 5 test logic với phản hồi giả lập từ file 01/11 (không lưu bản trùng, lưu bản mới, chặn khi đổi cột, lấy manifest từ HF) | Claude | Xong. Bước đẩy lên HF chưa test được vì cần token write |
 | 4 | Kiểm tra từng nguồn của kế hoạch v2 truy cập được từ Việt Nam (mục 1) | Claude | Xong |
 | 5 | Cho phép đổi repo HF (`--repo`, `HF_REPO`) trong `download_data.py`, `crawl_cdc_us.py`, workflow | Claude | Xong |
-| 6 | Tạo repo `tdu175/FluDataset`, upload và đối chiếu 541/541 file (mục 3) | Dũng | Xong 08/11 |
+| 6 | Thử repo riêng `DragonBornRay/FluDataset` (mục 3) | Dũng | Đã bỏ 09/11, gộp về `DragonBornRay/FluDataset` |
 | 6a | Cập nhật Delphi đến 31/10, dựng lại `samples/`, upload và đối chiếu 559/559 file | Dũng | Xong 08/11 |
-| 6b | Tạo token write riêng cho GitHub Actions (mục 3, bước 1) | Dũng | Chưa |
+| 6b | Tạo token write cho GitHub Actions trên `DragonBornRay/FluDataset` (mục 3, bước 1) | Hiếu (chủ repo HF) | Chưa |
 | 7 | Thêm secret `HF_TOKEN` và variable `HF_REPO` vào GitHub repo | Người có quyền admin repo GitHub | Chưa |
 | 8 | Commit trên nhánh `trongdung`, mở Pull Request và gộp vào `main` (lịch và nút chạy tay chỉ có trên nhánh mặc định) | Dũng / nhóm | Chưa |
 | 9 | Bấm "Run workflow" với `dry_run = true`: xác nhận data.cdc.gov không chặn runner, id tìm đúng, cột khớp | Người 2 | Chưa |
@@ -173,7 +161,7 @@ Hiện workflow chỉ lo các nguồn bị chặn. Để dashboard chạy với 
 
 ## 8. Dữ liệu đã đủ để bám kế hoạch v2 chưa
 
-Kiểm tra ngày 08/11/2026 trên bản `tdu175/FluDataset` (chụp 01–04/11/2026). Độ phủ = % ô bang × tuần có số liệu, 51 đơn vị (50 bang + DC), các mùa 2010-11 đến 2025-26.
+Kiểm tra ngày 08/11/2026 trên bản chụp 01–04/11/2026. Độ phủ = % ô bang × tuần có số liệu, 51 đơn vị (50 bang + DC), các mùa 2010-11 đến 2025-26.
 
 ### 8.1. Từng cột trong từ điển dữ liệu (kế hoạch v2, mục 6)
 
@@ -257,7 +245,7 @@ Chỉ cần trong 2 trường hợp: workflow GitHub Actions báo đỏ vì data
 **Nguồn CDC (WVAL, vaccine, trang ngưỡng): dùng script, không tải bằng trình duyệt**
 
 1. Bật VPN đặt ở Mỹ.
-2. Đăng nhập Hugging Face một lần: `hf auth login`, dán token write của repo `tdu175/FluDataset` (xin chủ repo).
+2. Đăng nhập Hugging Face một lần: `hf auth login`, dán token write của repo `DragonBornRay/FluDataset` (xin Hiếu).
 3. Chạy thử, không ghi gì: `python scripts/crawl_cdc_us.py --dry-run`. Bảng cuối phải có 3 dòng không có chữ `LOI`.
 4. Chạy thật: `python scripts/crawl_cdc_us.py --upload`. Script tự lưu vào `raw/`, ghi manifest và đẩy lên HF trong một commit.
 5. Nếu script báo không tra được id (CDC đổi tên bộ dữ liệu): mở data.cdc.gov bằng trình duyệt (vẫn bật VPN), tìm bộ dữ liệu, lấy id dạng `xxxx-xxxx` trên URL rồi chạy `python scripts/crawl_cdc_us.py --upload --id-wval <id>` (hoặc `--id-vax <id>`).
@@ -271,7 +259,7 @@ Chỉ cần trong 2 trường hợp: workflow GitHub Actions báo đỏ vì data
 2. Lưu vào `data/raw/<nguồn>/<YYYY-MM-DD>/` (ngày tải), giữ nguyên tên file. Thư mục nguồn: `census_popest_state`, `census_popest_places`, `census_gazetteer`.
 3. `python scripts/register_manual.py --by "Tên"` để ghi vào manifest.
 4. Chạy lại `build_reference.py` rồi các bước 3–8 ở mục 9.3.
-5. Đẩy lên HF: `hf upload tdu175/FluDataset ./data . --repo-type dataset --exclude ".cache/*" --exclude "samples/preview_*" --exclude "samples/*_results.json" --exclude "sandbox/*"`
+5. Đẩy lên HF: `hf upload DragonBornRay/FluDataset ./data . --repo-type dataset --exclude ".cache/*" --exclude "samples/preview_*" --exclude "samples/*_results.json" --exclude "sandbox/*"`
 
 ### 9.5. Lỗi thường gặp
 
@@ -283,5 +271,5 @@ Chỉ cần trong 2 trường hợp: workflow GitHub Actions báo đỏ vì data
 | Open-Meteo `429` | Hết lượt miễn phí trong ngày | Chạy lại hôm sau; script bỏ qua file đã có |
 | Open-Meteo `503` | Máy chủ quá tải | Chạy lại; script bỏ qua file đã có |
 | API `api.delphi.cmu.edu/epidata/fluview` trả rỗng | API cũ đã ngừng từ 22/09/2026 | Dùng script của nhóm (Delphi V5), không dùng `epidatpy` bản cũ |
-| `hf upload` báo lỗi quyền | Token chỉ đọc, hoặc không có quyền trên `tdu175/FluDataset` | Xin chủ repo token write |
+| `hf upload` báo lỗi quyền | Token chỉ đọc, hoặc không có quyền trên `DragonBornRay/FluDataset` | Xin chủ repo token write |
 | `crawl_cdc_us.py --upload` báo commit thất bại | Có người đẩy lên HF chen giữa | Chạy lại lệnh |
