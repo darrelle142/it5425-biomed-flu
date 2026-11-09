@@ -1,4 +1,11 @@
 DANH SÁCH DỮ LIỆU CẦN TẢI TAY
+
+*** TỪ 08/11/2026: WVAL, VACCINE VÀ TRANG NGƯỠNG CDC ĐƯỢC TẢI TỰ ĐỘNG ***
+GitHub Actions (.github/workflows/crawl_cdc.yml) chạy scripts/crawl_cdc_us.py mỗi thứ Bảy
+và đẩy thẳng lên Hugging Face. Kế hoạch: docs/ke_hoach_tu_dong_crawl_cdc.md
+Danh sách dưới đây chỉ còn là PHƯƠNG ÁN DỰ PHÒNG khi workflow báo lỗi (job đỏ trên tab Actions).
+Dự phòng nhanh nhất: bật VPN Mỹ rồi chạy  python scripts/crawl_cdc_us.py --upload
+(cần biến môi trường HF_TOKEN), script tự lưu, ghi manifest và đẩy lên Hugging Face.
 Cập nhật: 02/11/2026. Script đã thử: scripts/crawl_missing.py (log: data/raw/blocked_2026-11-02.json)
 
 Lý do phải tải tay: data.cdc.gov và www2.census.gov trả lỗi 403 khi script chạy từ máy ở Việt Nam.

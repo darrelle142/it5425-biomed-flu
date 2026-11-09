@@ -1,0 +1,51 @@
+# Tai cac nguon CDC bi chan tu Viet Nam (WVAL, vaccine, trang nguong HRD) tu may chu GitHub o My,
+# roi day len Hugging Face. Ke hoach: docs/ke_hoach_tu_dong_crawl_cdc.md
+# Can secret HF_TOKEN (token Hugging Face quyen write tren repo dataset) va bien HF_REPO
+# (Settings > Secrets and variables > Actions > Variables), vi du: <user>/FluDataset.
+name: Tai nguon CDC (WVAL, vaccine, nguong)
+
+on:
+  schedule:
+    - cron: "0 3 * * 6"  # 03:00 UTC thu Bay = 10:00 gio Viet Nam, sau ban cap nhat thu Sau cua CDC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Chi tai va kiem tra, khong day len Hugging Face"
+        type: boolean
+        default: true
+      only:
+        description: "Chi chay mot so nguon, cach nhau dau cach (wval vax methods); de trong = tat ca"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crawl-cdc
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install "huggingface_hub>=0.24"
+
+      - name: Tai va day len Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_REPO: ${{ vars.HF_REPO }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); else args+=(--upload); fi
+          if [ -n "$ONLY" ]; then args+=(--only $ONLY); fi
+          python scripts/crawl_cdc_us.py "${args[@]}"
