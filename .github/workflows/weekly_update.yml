@@ -1,6 +1,7 @@
 # Cap nhat hang tuan: tai Delphi + thoi tiet, dung lai bang, kiem tra (cong chat luong), day len Hugging Face.
 # Chay sau crawl_cdc.yml (03:00 UTC) de dung luon WVAL, vaccine, trang nguong moi tai.
 # Can secret HF_TOKEN (token write tren repo dataset); bien HF_REPO tuy chon (mac dinh DragonBornRay/FluDataset).
+# Secret HF_BACKUP_TOKEN (token write chi tren repo du phong DragonBornRay/FluDataset-backup) de sao luu sau moi lan day.
 # Ke hoach: docs/ke_hoach_tu_dong_crawl_cdc.md
 name: Cap nhat du lieu hang tuan
 
@@ -32,6 +33,7 @@ jobs:
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       HF_REPO: ${{ vars.HF_REPO }}
+      HF_BACKUP_TOKEN: ${{ secrets.HF_BACKUP_TOKEN }}
       PYTHONIOENCODING: utf-8
       HF_HUB_DISABLE_PROGRESS_BARS: "1"
     steps:

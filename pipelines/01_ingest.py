@@ -15,6 +15,7 @@ Cac buoc (theo thu tu):
     build     profile_sample -> profile_dataset -> build_thresholds -> build_environment
     audit     scripts/audit_data.py --strict           cong chat luong: loi thi dung, khong day
     upload    scripts/upload_hf.py --tag               chi khi co --upload; gan tag vYYYY-MM-DD cho ban vua day
+    backup    scripts/backup_hf.py                     sau upload: sao luu sang repo du phong rieng tu (buoc mem)
 
 Moi lenh co gioi han thoi gian (TIMEOUT). Nguon CDC bi chan tu Viet Nam (WVAL, vaccine, trang nguong) do workflow crawl_cdc.yml tai rieng.
 """
@@ -38,7 +39,7 @@ STEPS = {
 }
 DEFAULT = ["download", "verify", "delphi", "weather", "build", "audit"]
 # Gioi han thoi gian moi lenh (phut): mot nguon bi treo khong keo ca job den het gio
-TIMEOUT = {"download": 20, "verify": 10, "delphi": 25, "weather": 15, "build": 20, "audit": 5, "upload": 20}
+TIMEOUT = {"download": 20, "verify": 10, "delphi": 25, "weather": 15, "build": 20, "audit": 5, "upload": 20, "backup": 30}
 # Buoc "mem": that bai thi canh bao va chay tiep voi so lieu cu (thoi tiet chi phuc vu RQ4, khong can moi tuan)
 SOFT = {"weather"}
 
@@ -84,7 +85,12 @@ def main():
             sys.exit("Chi day len khi da chay buoc audit trong cung lan chay.")
         if run([S / "upload_hf.py", "-m", a.message, "--tag"], TIMEOUT["upload"]) != 0:
             sys.exit("Day len Hugging Face that bai.")
-    print("\nXong:", ", ".join(steps + (["upload"] if a.upload else [])))
+        # Sao luu sang repo du phong: buoc mem, loi thi canh bao (ban chinh da len HF)
+        if os.environ.get("GITHUB_ACTIONS") and not os.environ.get("HF_BACKUP_TOKEN"):
+            warn("Chua co secret HF_BACKUP_TOKEN: bo qua sao luu sang repo du phong.")
+        elif run([S / "backup_hf.py"], TIMEOUT["backup"]) != 0:
+            warn("Sao luu sang repo du phong that bai; ban chinh van da cap nhat. Chay lai scripts/backup_hf.py.")
+    print("\nXong:", ", ".join(steps + (["upload", "backup"] if a.upload else [])))
 
 
 if __name__ == "__main__":
