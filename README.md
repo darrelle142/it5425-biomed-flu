@@ -47,6 +47,15 @@ Chạy mọi lệnh từ thư mục gốc của repo.
 
 ## Pipeline
 
+**Cập nhật hằng tuần bằng một lệnh** (Thành viên 1). Workflow [`weekly_update.yml`](.github/workflows/weekly_update.yml) chạy lệnh này lúc 13:00 thứ Bảy giờ Việt Nam, sau `crawl_cdc.yml`:
+
+```bash
+python pipelines/01_ingest.py                    # Delphi + thời tiết 35 ngày gần nhất, dựng bảng, audit --strict
+python pipelines/01_ingest.py --upload -m "..."  # như trên, audit đạt thì đẩy phần mới lên Hugging Face
+```
+
+Từng bước riêng lẻ:
+
 Hướng dẫn dựng lại dữ liệu khi lỗi, kể cả khi phải dùng VPN: [`docs/ke_hoach_tu_dong_crawl_cdc.md`](docs/ke_hoach_tu_dong_crawl_cdc.md) mục 9.
 
 | Bước | Lệnh | Kết quả |
@@ -56,12 +65,13 @@ Hướng dẫn dựng lại dữ liệu khi lỗi, kể cả khi phải dùng VP
 | 2b. CDC bị chặn (tự động) | `python scripts/crawl_cdc_us.py` (GitHub Actions chạy mỗi thứ Bảy) | `raw/` WVAL, vaccine, trang ngưỡng CDC; tự đẩy lên Hugging Face |
 | 3. Ghi file tải tay | `python scripts/register_manual.py --by "Tên"` | Thêm file CDC tải tay vào `raw/manifest.jsonl` |
 | 4. Bảng tra cứu | `python scripts/build_reference.py` | `reference/cities.csv` (3–5 thành phố mỗi bang), `reference/holidays.csv` |
-| 5. Thời tiết 236 thành phố | `python scripts/crawl_cities_weather.py` | `raw/openmeteo_*_cities/` (chạy lại được, tự bỏ qua file đã có) |
+| 5. Thời tiết 236 thành phố | `python scripts/crawl_cities_weather.py` (lịch sử đầy đủ), `--update` (35 ngày gần nhất, hằng tuần) | `raw/openmeteo_*_cities/` |
 | 6. Môi trường | `python scripts/build_environment.py` | `samples/weather_state_week.csv.gz`, `samples/epa_pm25_state_week.csv.gz` |
 | 7. Bảng mẫu | `python scripts/profile_sample.py` | `samples/state_week_sample.csv.gz` |
 | 8. Ngưỡng CDC | `python scripts/build_thresholds.py` (đọc `state_week_sample`, nên chạy sau bước 7) | `reference/cdc_level_thresholds.csv`, `samples/cdc_level_state_week.csv.gz` |
 | 8b. Hồ sơ dữ liệu | `python scripts/profile_extras.py`, `profile_dataset.py` | `samples/wval_state_week`, `vaccine_state_season` |
-| 9. Kiểm tra độ đầy đủ | `python scripts/audit_data.py` | `samples/audit_results.json` |
+| 9. Kiểm tra độ đầy đủ | `python scripts/audit_data.py` (`--strict`: thoát mã 1 nếu có nguồn không đạt) | `samples/audit_results.json` |
+| 10. Đẩy lên Hugging Face | `python scripts/upload_hf.py` | Chỉ đẩy phần mới; manifest chỉ được thêm dòng; không ghi đè khi có người đẩy chen giữa |
 
 `crawl_cities_weather.py` và `crawl_missing.py` import từ `crawl_sample.py`, nên chạy bằng `python scripts/...` (không dùng `python -I`).
 
@@ -73,11 +83,14 @@ Nếu workflow báo lỗi (job đỏ), dùng phương án dự phòng: bật VPN
 
 ## Cập nhật dữ liệu lên Hugging Face
 
-Sau khi crawl hoặc tải tay, chạy từ thư mục gốc của repo:
+Sau khi crawl hoặc tải tay, chạy từ thư mục gốc của repo (cần `hf auth login` bằng token write, hoặc biến `HF_TOKEN`):
 
-```powershell
-hf upload DragonBornRay/FluDataset ./data . --repo-type dataset --exclude ".cache/*" --exclude "samples/preview_*" --exclude "samples/*_results.json" --exclude "sandbox/*" --commit-message "Cap nhat du lieu tuan ..."
+```bash
+python scripts/upload_hf.py --dry-run          # xem những gì sẽ đẩy
+python scripts/upload_hf.py -m "Cap nhat tuan ..."
 ```
+
+`upload_hf.py` dựa trên commit Hugging Face đã tải về (`data/.hf_revision`, do `download_data.py` ghi). Nếu báo commit thất bại vì có người đẩy chen giữa: chạy lại `download_data.py`, chạy lại pipeline, rồi đẩy.
 
 ## Hạn chế dữ liệu
 

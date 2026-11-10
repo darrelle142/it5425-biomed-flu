@@ -22,7 +22,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: crawl-cdc
+  group: fludataset-hf  # dung chung voi weekly_update.yml
   cancel-in-progress: false
 
 jobs:

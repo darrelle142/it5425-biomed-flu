@@ -150,14 +150,23 @@ Mỗi người kéo nhánh mới nhất của repo GitHub rồi chạy `python s
 | Trang ngưỡng đổi mà không ai chạy lại `build_thresholds.py` | Giai đoạn 2: workflow so bảng ngưỡng tách từ trang mới với `reference/cdc_level_thresholds.csv` và báo khi khác |
 | Delphi đổi API (bản cũ đã ngừng từ 22/09/2026) | Theo dõi trang Delphi; V5 hiện đang hoạt động |
 
-## 7. Giai đoạn 2: cập nhật hằng tuần toàn bộ (làm nếu kịp)
+## 7. Giai đoạn 2: cập nhật hằng tuần toàn bộ
 
-Hiện workflow chỉ lo các nguồn bị chặn. Để dashboard chạy với dữ liệu mới nhất (tuần 5 của kế hoạch v2), cần thêm một workflow thứ hai chạy sau khi Delphi cập nhật (thứ Năm/thứ Sáu):
+**Đã làm ngày 10/11/2026.** Workflow [`weekly_update.yml`](../.github/workflows/weekly_update.yml) chạy 06:00 UTC thứ Bảy (13:00 giờ Việt Nam), sau `crawl_cdc.yml` 3 giờ. Hai workflow dùng chung nhóm `concurrency: fludataset-hf` nên không bao giờ cùng ghi lên Hugging Face.
 
-- `crawl_sample.py delphi` (khoảng 8 phút do giới hạn tốc độ ẩn danh của Delphi).
-- Thời tiết: chỉ tải đoạn mới thay vì cả lịch sử từ 2010 (cần sửa `crawl_sample.py weather` và `crawl_cities_weather.py`, vì tải lại 236 thành phố × 16 năm mỗi tuần là quá nặng).
-- Chạy lại `build_thresholds.py`, `build_environment.py`, `profile_sample.py`, `audit_data.py`, rồi đẩy `samples/` mới lên HF.
-- Các script này cần toàn bộ `raw/` (~290 MB), nên workflow phải tải dữ liệu từ HF trước khi chạy.
+Các bước (đều nằm trong `pipelines/01_ingest.py`, chạy được cả trên máy):
+
+1. `download_data.py`: tải `data/` (~300 MB) từ HF, ghi commit đã tải vào `data/.hf_revision`.
+2. `crawl_sample.py delphi`: ILINet, NHSN, NSSP, FluSurv, xét nghiệm, NWSS (~8 phút).
+3. `crawl_cities_weather.py --update`: thời tiết và PM2.5 của 236 thành phố, chỉ 35 ngày gần nhất (472 lượt gọi Open-Meteo, trong hạn mức miễn phí). Lưu thành `<bang>__<thanh_pho>__recent.json`; `build_environment.py` ghép với lịch sử, ngày trùng thì lấy bản tải sau. Lỗi dưới 10% số file thì vẫn chạy tiếp với số liệu cũ.
+4. Dựng lại bảng: `profile_sample` → `profile_dataset` → `build_thresholds` → `build_environment`.
+5. **Cổng chất lượng:** `audit_data.py --strict`. Có nguồn không đạt thì dừng, không đẩy.
+6. `upload_hf.py`: chỉ đẩy file `raw/` mới, `manifest.jsonl` và bảng `samples/`, `reference/` có thay đổi. Manifest trên máy phải bắt đầu bằng đúng manifest trên HF (chỉ thêm dòng); commit dùng `parent_commit` nên nếu có người đẩy chen giữa thì HF từ chối thay vì ghi đè.
+7. Bảng audit được ghi vào trang tóm tắt của lần chạy và lưu thành artifact `audit-<run_id>` làm minh chứng.
+
+Chạy tay: tab **Actions → "Cap nhat du lieu hang tuan" → Run workflow**. Mặc định không đẩy (`upload` bỏ tích) để chạy thử; lịch thứ Bảy luôn đẩy.
+
+Còn lại cho giai đoạn sau: gọi `pipelines/02`–`05` của TV2–TV5 khi các bạn bàn giao; kiểm tra toàn vẹn sha256 trên HF hằng tuần; tag phiên bản; bản sao lưu thứ hai.
 
 ## 8. Dữ liệu đã đủ để bám kế hoạch v2 chưa
 

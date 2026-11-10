@@ -1,0 +1,77 @@
+# Cap nhat hang tuan: tai Delphi + thoi tiet, dung lai bang, kiem tra (cong chat luong), day len Hugging Face.
+# Chay sau crawl_cdc.yml (03:00 UTC) de dung luon WVAL, vaccine, trang nguong moi tai.
+# Can secret HF_TOKEN (token write tren repo dataset); bien HF_REPO tuy chon (mac dinh DragonBornRay/FluDataset).
+# Ke hoach: docs/ke_hoach_tu_dong_crawl_cdc.md
+name: Cap nhat du lieu hang tuan
+
+on:
+  schedule:
+    - cron: "0 6 * * 6"  # 06:00 UTC thu Bay = 13:00 gio Viet Nam
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Day len Hugging Face neu audit dat (bo tich = chi chay thu)"
+        type: boolean
+        default: false
+      steps:
+        description: "Chi chay mot so buoc, cach nhau dau cach (delphi weather build audit); de trong = tat ca"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fludataset-hf  # dung chung voi crawl_cdc.yml: khong bao gio hai job cung ghi len HF
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_REPO: ${{ vars.HF_REPO }}
+      PYTHONIOENCODING: utf-8
+      HF_HUB_DISABLE_PROGRESS_BARS: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Tai du lieu hien tai tu Hugging Face
+        run: python scripts/download_data.py
+
+      - name: Thu thap, dung bang, kiem tra (va day len)
+        env:
+          UPLOAD: ${{ github.event_name == 'schedule' || inputs.upload }}
+          STEPS: ${{ inputs.steps }}
+        run: |
+          args=()
+          if [ -n "$STEPS" ]; then args+=(--steps $STEPS); fi
+          if [ "$UPLOAD" = "true" ]; then args+=(--upload); fi
+          python pipelines/01_ingest.py "${args[@]}" -m "Tu dong cap nhat hang tuan $(date -u +%F) (github-actions)"
+
+      - name: Tom tat audit
+        if: always()
+        run: |
+          python - <<'EOF' >> "$GITHUB_STEP_SUMMARY" || true
+          import json
+          rows = json.load(open("data/samples/audit_results.json", encoding="utf-8"))
+          print("## Kiem tra du lieu\n\n| Nguon | Dat | Thoi gian | Don vi |\n| --- | --- | --- | --- |")
+          for r in rows:
+              print(f"| {r['source']} | {'✅' if r['ok'] else '❌'} | {r['period'] or ''} | {r['units_51'] or ''} |")
+          EOF
+
+      - name: Luu bang audit lam minh chung
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-${{ github.run_id }}
+          path: data/samples/audit_results.json
+          if-no-files-found: ignore
