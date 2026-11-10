@@ -7,6 +7,8 @@ Cach chay (tu thu muc goc cua repo):
 
 Cac buoc (theo thu tu):
     download  tai data/ tu Hugging Face (bo qua neu data/raw da co, tru khi chi dinh ro --steps download)
+    verify    scripts/verify_integrity.py              du lieu tho tai ve phai khop manifest va Hugging Face;
+              lech thi dung ngay (khong crawl, khong day gi len)
     delphi    scripts/crawl_sample.py delphi            ILINet, NHSN, NSSP, FluSurv, xet nghiem, NWSS
     weather   scripts/crawl_cities_weather.py --update  35 ngay gan nhat, 236 thanh pho (buoc mem: loi thi
               canh bao, dung so lieu thoi tiet cu, van chay tiep)
@@ -27,15 +29,16 @@ ROOT = Path(__file__).resolve().parents[1]
 S = ROOT / "scripts"
 STEPS = {
     "download": [[S / "download_data.py"]],
+    "verify": [[S / "verify_integrity.py"]],
     "delphi": [[S / "crawl_sample.py", "delphi"]],
     "weather": [[S / "crawl_cities_weather.py", "--update"]],
     "build": [[S / "profile_sample.py"], [S / "profile_dataset.py"], [S / "build_thresholds.py"],
               [S / "build_environment.py"]],
     "audit": [[S / "audit_data.py", "--strict"]],
 }
-DEFAULT = ["download", "delphi", "weather", "build", "audit"]
+DEFAULT = ["download", "verify", "delphi", "weather", "build", "audit"]
 # Gioi han thoi gian moi lenh (phut): mot nguon bi treo khong keo ca job den het gio
-TIMEOUT = {"download": 20, "delphi": 25, "weather": 15, "build": 20, "audit": 5, "upload": 20}
+TIMEOUT = {"download": 20, "verify": 10, "delphi": 25, "weather": 15, "build": 20, "audit": 5, "upload": 20}
 # Buoc "mem": that bai thi canh bao va chay tiep voi so lieu cu (thoi tiet chi phuc vu RQ4, khong can moi tuan)
 SOFT = {"weather"}
 

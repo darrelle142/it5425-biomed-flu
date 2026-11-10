@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       steps:
-        description: "Chi chay mot so buoc, cach nhau dau cach (delphi weather build audit); de trong = tat ca"
+        description: "Chi chay mot so buoc, cach nhau dau cach (verify delphi weather build audit); de trong = tat ca"
         type: string
         default: ""
 
@@ -57,11 +57,17 @@ jobs:
           if [ "$UPLOAD" = "true" ]; then args+=(--upload); fi
           python pipelines/01_ingest.py "${args[@]}" -m "Tu dong cap nhat hang tuan $(date -u +%F) (github-actions)"
 
-      - name: Tom tat audit
+      - name: Tom tat kiem tra toan ven va audit
         if: always()
         run: |
           python - <<'EOF' >> "$GITHUB_STEP_SUMMARY" || true
-          import json
+          import json, os
+          if os.path.exists("data/samples/integrity_results.json"):
+              s = json.load(open("data/samples/integrity_results.json", encoding="utf-8"))["summary"]
+              print("## Toan ven du lieu tho\n\n| Muc | Gia tri |\n| --- | --- |")
+              for k, v in s.items():
+                  print(f"| {k} | {v} |")
+              print()
           rows = json.load(open("data/samples/audit_results.json", encoding="utf-8"))
           print("## Kiem tra du lieu (ban tai moi nhat cua moi nguon)\n\n| Nguon | Dat | Thoi gian | Don vi | Ghi chu |\n| --- | --- | --- | --- | --- |")
           for r in rows:
@@ -73,5 +79,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: audit-${{ github.run_id }}
-          path: data/samples/audit_results.json
+          path: |
+            data/samples/audit_results.json
+            data/samples/integrity_results.json
           if-no-files-found: ignore
