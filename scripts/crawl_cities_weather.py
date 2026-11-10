@@ -1,12 +1,18 @@
 """Tai thoi tiet va PM2.5 Open-Meteo cho cac thanh pho trong data/reference/cities.csv.
 
 Cach chay (tu thu muc project):
-    python scripts/crawl_cities_weather.py
+    python scripts/crawl_cities_weather.py            # tai lich su day du cho thanh pho chua co file
+    python scripts/crawl_cities_weather.py --update   # cap nhat hang tuan: chi tai doan gan day
 
-Chay lai duoc nhieu lan: file da tai (o bat ky ngay nao) thi bo qua. Neu Open-Meteo bao het luot
+Che do --update tai RECENT_DAYS ngay gan nhat cho ca 236 thanh pho (2 luot goi moi thanh pho), luu thanh
+<bang>__<thanh_pho>__recent.json trong thu muc ngay tai. build_environment.py ghep moi file cua mot thanh pho
+theo ngay, ngay trung thi lay ban tai sau cung (Open-Meteo sua so lieu vai ngay gan nhat).
+
+Che do mac dinh chay lai duoc nhieu lan: file da tai (o bat ky ngay nao) thi bo qua. Neu Open-Meteo bao het luot
 trong ngay (HTTP 429 lap lai), script dung lai; chay lai vao hom sau de tai not phan con thieu.
 Thanh pho lon nhat cua moi bang dung lai file da tai o crawl_sample.py neu cach toa do cu duoi 15 km.
 """
+import argparse
 import csv
 import datetime as dt
 import glob
@@ -20,6 +26,7 @@ import urllib.parse
 from crawl_sample import REF, RAW, fetch, save
 
 END = (dt.date.today() - dt.timedelta(days=7)).isoformat()
+RECENT_DAYS = 35  # chong lap voi lan cap nhat truoc, phong khi mot tuan bi loi
 
 
 def slug(s):
@@ -88,8 +95,38 @@ def get_chunked(base, q):
     return 200, json.dumps(merged).encode(), " | ".join(urls)
 
 
-old = {r["state"]: r for r in csv.DictReader((REF / "cities_largest_per_state.csv").open(encoding="utf-8"))}
+ap = argparse.ArgumentParser()
+ap.add_argument("--update", action="store_true", help=f"chi tai {RECENT_DAYS} ngay gan nhat cho moi thanh pho")
+args = ap.parse_args()
 cities = list(csv.DictReader((REF / "cities.csv").open(encoding="utf-8")))
+
+
+def update():
+    """Tai doan gan day (thoi tiet + PM2.5) cho moi thanh pho. Tra ve so file loi."""
+    start = (dt.date.fromisoformat(END) - dt.timedelta(days=RECENT_DAYS)).isoformat()
+    bad = 0
+    for c in cities:
+        name = f"{c['state']}__{slug(c['city'])}__recent.json"
+        q = {"latitude": float(c["lat"]), "longitude": float(c["lon"]), "timezone": "auto",
+             "start_date": start, "end_date": END}
+        for source, base, extra in [
+                ("openmeteo_weather_cities", "https://archive-api.open-meteo.com/v1/archive?",
+                 {"daily": "temperature_2m_mean,relative_humidity_2m_mean"}),
+                ("openmeteo_pm25_cities", "https://air-quality-api.open-meteo.com/v1/air-quality?",
+                 {"hourly": "pm2_5"})]:
+            url = base + urllib.parse.urlencode({**q, **extra})
+            status, body, _ = get_json(url)
+            save(source, name, url, status, body)
+            bad += status != 200
+            time.sleep(1)
+    print(f"Xong cap nhat {start} -> {END}: {2 * len(cities) - bad}/{2 * len(cities)} file thanh cong.")
+    return bad
+
+
+if args.update:  # loi le te van chay tiep (bang dung tam so lieu cu); loi tren 10% thi bao that bai
+    sys.exit(1 if update() > 0.1 * 2 * len(cities) else 0)
+
+old = {r["state"]: r for r in csv.DictReader((REF / "cities_largest_per_state.csv").open(encoding="utf-8"))}
 done = skipped = 0
 for c in cities:
     s, lat, lon = c["state"], float(c["lat"]), float(c["lon"])
