@@ -44,24 +44,24 @@ def km(a, b, c, d):
     return 12742 * asin(sqrt(h))
 
 
-def get(url):
+def get(url, timeout=180):
     for wait in (70, 300):
-        status, body = fetch(url, timeout=180)
+        status, body = fetch(url, timeout=timeout)
         if status != 429:
             return status, body
         print(f"  429, cho {wait} giay", flush=True)
         time.sleep(wait)
-    status, body = fetch(url, timeout=180)
+    status, body = fetch(url, timeout=timeout)
     if status == 429:
         print("Open-Meteo van tra 429: co the da het luot trong ngay. Dung lai, hay chay lai vao ngay mai.")
         sys.exit(2)
     return status, body
 
 
-def get_json(url, tries=3):
+def get_json(url, tries=3, timeout=180, waits=(30, 60)):
     """Goi get() va kiem tra JSON; thu lai khi 503, loi mang hoac 200 kem thong bao loi."""
     for i in range(tries):
-        status, body = get(url)
+        status, body = get(url, timeout)
         if status == 200:
             try:
                 return 200, body, json.loads(body)
@@ -69,8 +69,8 @@ def get_json(url, tries=3):
                 print("  noi dung khong phai JSON:", body[:80], flush=True)
                 status = 0
         if i < tries - 1:
-            print(f"  loi {status}, thu lai sau {30 * (i + 1)} giay", flush=True)
-            time.sleep(30 * (i + 1))
+            print(f"  loi {status} ({body[:120]!r}), thu lai sau {waits[i]} giay", flush=True)
+            time.sleep(waits[i])
     return status, body, None
 
 
@@ -101,24 +101,38 @@ args = ap.parse_args()
 cities = list(csv.DictReader((REF / "cities.csv").open(encoding="utf-8")))
 
 
+BATCH = 50  # Open-Meteo nhan nhieu toa do trong mot lan goi, tra ve danh sach theo dung thu tu
+
+
 def update():
-    """Tai doan gan day (thoi tiet + PM2.5) cho moi thanh pho. Tra ve so file loi."""
+    """Tai doan gan day (thoi tiet + PM2.5) cho moi thanh pho, gom BATCH thanh pho mot lan goi.
+
+    Moi thanh pho van duoc luu thanh mot file rieng. Tra ve so file loi.
+    """
     start = (dt.date.fromisoformat(END) - dt.timedelta(days=RECENT_DAYS)).isoformat()
     bad = 0
-    for c in cities:
-        name = f"{c['state']}__{slug(c['city'])}__recent.json"
-        q = {"latitude": float(c["lat"]), "longitude": float(c["lon"]), "timezone": "auto",
-             "start_date": start, "end_date": END}
-        for source, base, extra in [
-                ("openmeteo_weather_cities", "https://archive-api.open-meteo.com/v1/archive?",
-                 {"daily": "temperature_2m_mean,relative_humidity_2m_mean"}),
-                ("openmeteo_pm25_cities", "https://air-quality-api.open-meteo.com/v1/air-quality?",
-                 {"hourly": "pm2_5"})]:
-            url = base + urllib.parse.urlencode({**q, **extra})
-            status, body, _ = get_json(url)
-            save(source, name, url, status, body)
-            bad += status != 200
-            time.sleep(1)
+    for source, base, extra in [
+            ("openmeteo_weather_cities", "https://archive-api.open-meteo.com/v1/archive?",
+             {"daily": "temperature_2m_mean,relative_humidity_2m_mean"}),
+            ("openmeteo_pm25_cities", "https://air-quality-api.open-meteo.com/v1/air-quality?",
+             {"hourly": "pm2_5"})]:
+        for i in range(0, len(cities), BATCH):
+            group = cities[i:i + BATCH]
+            q = {"latitude": ",".join(c["lat"] for c in group), "longitude": ",".join(c["lon"] for c in group),
+                 "timezone": "auto", "start_date": start, "end_date": END, **extra}
+            url = base + urllib.parse.urlencode(q)
+            status, body, js = get_json(url, timeout=60, waits=(10, 30))
+            if js is not None and not isinstance(js, list):
+                js = [js]  # chi mot toa do thi Open-Meteo tra ve mot object
+            if js is not None and len(js) != len(group):
+                print(f"  {source}: gui {len(group)} toa do, nhan {len(js)} ket qua", flush=True)
+                status, js = 0, None
+            for k, c in enumerate(group):
+                name = f"{c['state']}__{slug(c['city'])}__recent.json"
+                part = json.dumps(js[k]).encode() if js is not None else body
+                save(source, name, url, status, part)
+                bad += js is None
+            time.sleep(2)
     print(f"Xong cap nhat {start} -> {END}: {2 * len(cities) - bad}/{2 * len(cities)} file thanh cong.")
     return bad
 
