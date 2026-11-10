@@ -14,7 +14,7 @@ Cac buoc (theo thu tu):
               canh bao, dung so lieu thoi tiet cu, van chay tiep)
     build     profile_sample -> profile_dataset -> build_thresholds -> build_environment
     audit     scripts/audit_data.py --strict           cong chat luong: loi thi dung, khong day
-    upload    scripts/upload_hf.py                     chi khi co --upload
+    upload    scripts/upload_hf.py --tag               chi khi co --upload; gan tag vYYYY-MM-DD cho ban vua day
 
 Moi lenh co gioi han thoi gian (TIMEOUT). Nguon CDC bi chan tu Viet Nam (WVAL, vaccine, trang nguong) do workflow crawl_cdc.yml tai rieng.
 """
@@ -82,7 +82,7 @@ def main():
     if a.upload:
         if "audit" not in steps:
             sys.exit("Chi day len khi da chay buoc audit trong cung lan chay.")
-        if run([S / "upload_hf.py", "-m", a.message], TIMEOUT["upload"]) != 0:
+        if run([S / "upload_hf.py", "-m", a.message, "--tag"], TIMEOUT["upload"]) != 0:
             sys.exit("Day len Hugging Face that bai.")
     print("\nXong:", ", ".join(steps + (["upload"] if a.upload else [])))
 

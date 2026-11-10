@@ -3,6 +3,7 @@
 Cach chay (tu thu muc goc cua repo, can bien HF_TOKEN co quyen write hoac da `hf auth login`):
     python scripts/upload_hf.py --dry-run              # chi liet ke nhung gi se day
     python scripts/upload_hf.py -m "Cap nhat tuan ..."
+    python scripts/upload_hf.py -m "..." --tag    # them tag phien ban vYYYY-MM-DD (UTC) cho commit vua day
 
 Day len:
 - file trong raw/ ma manifest tren may co nhung tren Hugging Face chua co (khong bao gio sua file cu);
@@ -15,6 +16,7 @@ Bao toan du lieu tho:
   khong ghi de. Khi do tai lai (download_data.py), chay lai pipeline roi day.
 """
 import argparse
+import datetime as dt
 import hashlib
 import json
 import os
@@ -43,6 +45,7 @@ def main():
     ap.add_argument("--repo", default=os.environ.get("HF_REPO") or "DragonBornRay/FluDataset")
     ap.add_argument("-m", "--message", default="Cap nhat du lieu")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--tag", action="store_true", help="gan tag vYYYY-MM-DD cho commit vua day (trung thi them -2, -3...)")
     a = ap.parse_args()
     token = os.environ.get("HF_TOKEN") or None
     api = HfApi(token=token)
@@ -102,6 +105,20 @@ def main():
     c = api.create_commit(a.repo, ops, commit_message=a.message, repo_type="dataset", parent_commit=parent)
     rev_file.write_text(f"{a.repo} {c.oid}\n", encoding="utf-8")
     print("Da day:", c.commit_url)
+    if a.tag:
+        try:  # du lieu da len HF; loi gan tag chi canh bao, gan lai tay duoc
+            tag_version(api, a.repo, c.oid, a.message)
+        except Exception as err:
+            print(f"CANH BAO: khong gan duoc tag cho {c.oid[:8]}: {err}")
+
+
+def tag_version(api, repo, oid, message):
+    """Gan tag phien ban cho commit: tai lai dung ban nay bang download_data.py --revision <tag>."""
+    have = {t.name for t in api.list_repo_refs(repo, repo_type="dataset").tags}
+    base = f"v{dt.datetime.now(dt.timezone.utc):%Y-%m-%d}"
+    name = base if base not in have else next(f"{base}-{i}" for i in range(2, 100) if f"{base}-{i}" not in have)
+    api.create_tag(repo, tag=name, revision=oid, tag_message=message, repo_type="dataset")
+    print(f"Da gan tag {name} cho commit {oid[:8]}")
 
 
 if __name__ == "__main__":
