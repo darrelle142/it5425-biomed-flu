@@ -1,12 +1,14 @@
 """Kiem tra do day du cua toan bo data/: doc thu tung nguon, do phu 51 don vi, khoang thoi gian, manifest.
 
 Cach chay: python scripts/audit_data.py   -> in bang ket qua, ghi data/samples/audit_results.json
+           python scripts/audit_data.py --strict   -> thoat voi ma 1 neu co dong ok = False (cong chat luong)
 """
 import glob
 import gzip
 import hashlib
 import io
 import json
+import sys
 import zipfile
 from pathlib import Path
 
@@ -131,3 +133,10 @@ print("\nDon vi thieu theo nguon:")
 for r in rows:
     if r["missing_units"]:
         print(f"  {r['source']}: {r['missing_units']}")
+
+bad = R[R.ok != True]  # noqa: E712 (cot ok co the la object)
+if len(bad):
+    print()
+    print("Co nguon KHONG dat:", bad.source.tolist())
+    if "--strict" in sys.argv:
+        sys.exit(1)
