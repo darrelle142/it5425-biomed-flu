@@ -41,11 +41,18 @@ def fetch(url, timeout=300):
 
 
 def save(source, name, url, status, body, gz=True):
-    """Luu noi dung vao raw/<nguon>/<ngay tai>/ va them mot dong vao manifest."""
+    """Luu noi dung vao raw/<nguon>/<ngay tai>/ va them mot dong vao manifest.
+
+    Khong bao gio ghi de: neu trong ngay da co file cung ten (tai lai, hoac ban vua tai tu Hugging Face)
+    thi them gio phut giay UTC vao ten, vi du ili__state_113400.csv.gz.
+    """
     folder = RAW / source / TODAY
     folder.mkdir(parents=True, exist_ok=True)
     ok = status == 200
     path = folder / (name + (".gz" if gz else ""))
+    if ok and path.exists():
+        stem, dot, ext = path.name.partition(".")
+        path = folder / f"{stem}_{dt.datetime.now(dt.timezone.utc):%H%M%S}{dot}{ext}"
     if ok:
         path.write_bytes(gzip.compress(body) if gz else body)
     with MANIFEST.open("a", encoding="utf-8") as fh:

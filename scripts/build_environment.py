@@ -39,8 +39,8 @@ def find(source_city, source_state, row, top):
     f = glob.glob(str(RAW / source_city / "*" / f"{base}.json.gz"))
     if top and not f:  # chi dung file theo bang khi thanh pho chua co lich su rieng
         f += glob.glob(str(RAW / source_state / "*" / f"{row.state}.json.gz"))
-    f += glob.glob(str(RAW / source_city / "*" / f"{base}__recent.json.gz"))
-    return sorted(f, key=lambda x: (Path(x).parent.name, "__recent" in x))
+    f += glob.glob(str(RAW / source_city / "*" / f"{base}__recent*.json.gz"))  # *: ban tai lai trong ngay co them gio
+    return sorted(f, key=lambda x: (Path(x).parent.name, "__recent" in x, Path(x).name))
 
 
 def load(files, key, cols):

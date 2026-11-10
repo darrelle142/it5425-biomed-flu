@@ -68,8 +68,10 @@ def main():
     ops, listed = [], []
     for m in new_lines:
         rel = (m.get("file") or "").removeprefix("data/")
-        if not rel or rel in remote or rel in listed:
+        if not rel or rel in listed:
             continue
+        if rel in remote:  # HF da co file nay: day len se ghi de (hoac bi bo qua) -> mat ban tai moi
+            sys.exit(f"Dong manifest moi tro toi {rel} nhung file nay da co tren HF; khong ghi de. Dung lai.")
         if not (DATA / rel).exists():
             sys.exit(f"manifest ghi {rel} nhung file khong co tren may.")
         listed.append(rel)
