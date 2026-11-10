@@ -30,10 +30,27 @@ def slug(s):
 
 
 def find(source_city, source_state, row, top):
-    f = sorted(glob.glob(str(RAW / source_city / "*" / f"{row.state}__{slug(row.city)}.json.gz")))
-    if not f and top:  # thanh pho lon nhat dung lai file cua crawl_sample.py
-        f = sorted(glob.glob(str(RAW / source_state / "*" / f"{row.state}.json.gz")))
-    return f[-1] if f else None
+    """Moi file cua mot thanh pho, xep tu cu den moi: (ngay tai, lich su day du truoc, doan gan day sau).
+
+    Thanh pho lon nhat con dung file cua crawl_sample.py (theo bang). Doan gan day do
+    crawl_cities_weather.py --update luu thanh <bang>__<thanh_pho>__recent.json.
+    """
+    base = f"{row.state}__{slug(row.city)}"
+    f = glob.glob(str(RAW / source_city / "*" / f"{base}.json.gz"))
+    if top and not f:  # chi dung file theo bang khi thanh pho chua co lich su rieng
+        f += glob.glob(str(RAW / source_state / "*" / f"{row.state}.json.gz"))
+    f += glob.glob(str(RAW / source_city / "*" / f"{base}__recent.json.gz"))
+    return sorted(f, key=lambda x: (Path(x).parent.name, "__recent" in x))
+
+
+def load(files, key, cols):
+    """Ghep cac file theo thoi gian; thoi diem trung thi giu ban tai sau cung."""
+    parts = []
+    for i, x in enumerate(files):
+        d = json.load(gzip.open(x))[key]
+        parts.append(pd.DataFrame({"time": pd.to_datetime(d["time"]), **{c: d[c] for c in cols}, "_order": i}))
+    d = pd.concat(parts).sort_values(["time", "_order"]).drop_duplicates("time", keep="last")
+    return d.drop(columns="_order").reset_index(drop=True)
 
 
 def to_week(d):
@@ -46,12 +63,11 @@ for (_, r), is_top in zip(cities.iterrows(), top):
     fw = find("openmeteo_weather_cities", "openmeteo_weather", r, is_top)
     fp = find("openmeteo_pm25_cities", "openmeteo_pm25", r, is_top)
     if fw:
-        d = json.load(gzip.open(fw))["daily"]
-        wrows.append(pd.DataFrame({"state": r.state, "city": r.city, "w": r.weight, "date": pd.to_datetime(d["time"]),
-                                   "temp": d["temperature_2m_mean"], "rh": d["relative_humidity_2m_mean"]}))
+        d = load(fw, "daily", ["temperature_2m_mean", "relative_humidity_2m_mean"])
+        wrows.append(pd.DataFrame({"state": r.state, "city": r.city, "w": r.weight, "date": d.time,
+                                   "temp": d.temperature_2m_mean, "rh": d.relative_humidity_2m_mean}))
     if fp:
-        d = json.load(gzip.open(fp))["hourly"]
-        p = pd.DataFrame({"time": pd.to_datetime(d["time"]), "pm25": d["pm2_5"]})
+        p = load(fp, "hourly", ["pm2_5"]).rename(columns={"pm2_5": "pm25"})
         p = p.groupby(p.time.dt.normalize()).pm25.mean().rename_axis("date").reset_index()
         prows.append(p.assign(state=r.state, city=r.city, w=r.weight))
     if not (fw and fp):
