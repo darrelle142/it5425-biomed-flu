@@ -36,11 +36,13 @@ def latest(src, pat):
 
 
 def delphi(src, pat, note=""):
-    for f in sorted(glob.glob(str(RAW / src / "*" / pat))):
+    """Kiem tra ban tai moi nhat cua tung file (cac ban cu van giu trong raw/ de truy lai lich su sua so)."""
+    newest = {Path(f).name: f for f in sorted(glob.glob(str(RAW / src / "*" / pat)))}
+    for f in newest.values():
         try:
             d = pd.read_csv(gzip.open(f), usecols=["geo_value", "reference_time", "value"])
             add(f"{src}/{Path(f).name[:-7]}", True, len(d), f"{d.reference_time.min()[:10]} → {d.reference_time.max()[:10]}",
-                d.geo_value.str.lower().unique(), note)
+                d.geo_value.str.lower().unique(), f"ban tai {Path(f).parent.name}" + (f"; {note}" if note else ""))
         except Exception as e:
             add(f"{src}/{Path(f).name}", False, note=f"LOI: {e}")
 
@@ -58,11 +60,11 @@ f = latest("cdc_wastewater_wval", "*.csv")
 d = pd.read_csv(f, usecols=["State/Territory", "Week_End", "Pathogen_Target", "Site"], low_memory=False)
 d = d[d.Pathogen_Target == "Influenza A virus"]
 add("cdc_wastewater_wval (cum A)", True, len(d), f"{d.Week_End.min()} → {d.Week_End.max()}",
-    d["State/Territory"].map(name2id).dropna().unique(), f"{d.Site.nunique()} diem; tai tay hang tuan")
+    d["State/Territory"].map(name2id).dropna().unique(), f"{d.Site.nunique()} diem; tu dong thu Bay (crawl_cdc.yml)")
 f = latest("cdc_fluvax_coverage", "*.csv")
 d = pd.read_csv(f, dtype=str, usecols=["Geography", "Season/Survey Year"])
 add("cdc_fluvax_coverage", True, len(d), f"{d['Season/Survey Year'].min()} → {d['Season/Survey Year'].max()}",
-    d.Geography.map(name2id).dropna().unique(), "chua co mua 2026-27; tai tay hang thang")
+    d.Geography.map(name2id).dropna().unique(), "chua co mua 2026-27; tu dong thu Bay (crawl_cdc.yml)")
 for src in ["cdc_nhsn_hrd", "cdc_nhsn_levels"]:
     f = latest(src, "*.csv")
     d = pd.read_csv(f, low_memory=False)

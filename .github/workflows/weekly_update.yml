@@ -63,9 +63,9 @@ jobs:
           python - <<'EOF' >> "$GITHUB_STEP_SUMMARY" || true
           import json
           rows = json.load(open("data/samples/audit_results.json", encoding="utf-8"))
-          print("## Kiem tra du lieu\n\n| Nguon | Dat | Thoi gian | Don vi |\n| --- | --- | --- | --- |")
+          print("## Kiem tra du lieu (ban tai moi nhat cua moi nguon)\n\n| Nguon | Dat | Thoi gian | Don vi | Ghi chu |\n| --- | --- | --- | --- | --- |")
           for r in rows:
-              print(f"| {r['source']} | {'✅' if r['ok'] else '❌'} | {r['period'] or ''} | {r['units_51'] or ''} |")
+              print(f"| {r['source']} | {'✅' if r['ok'] else '❌'} | {r['period'] or ''} | {r['units_51'] or ''} | {r['note'] or ''} |")
           EOF
 
       - name: Luu bang audit lam minh chung
