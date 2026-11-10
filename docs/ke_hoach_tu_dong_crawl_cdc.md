@@ -158,7 +158,7 @@ Các bước (đều nằm trong `pipelines/01_ingest.py`, chạy được cả 
 
 1. `download_data.py`: tải `data/` (~300 MB) từ HF, ghi commit đã tải vào `data/.hf_revision`.
 2. `crawl_sample.py delphi`: ILINet, NHSN, NSSP, FluSurv, xét nghiệm, NWSS (~8 phút).
-3. `crawl_cities_weather.py --update`: thời tiết và PM2.5 của 236 thành phố, chỉ 35 ngày gần nhất (472 lượt gọi Open-Meteo, trong hạn mức miễn phí). Lưu thành `<bang>__<thanh_pho>__recent.json`; `build_environment.py` ghép với lịch sử, ngày trùng thì lấy bản tải sau. Lỗi dưới 10% số file thì vẫn chạy tiếp với số liệu cũ.
+3. `crawl_cities_weather.py --update`: thời tiết và PM2.5 của 236 thành phố, chỉ 35 ngày gần nhất. Gom 50 thành phố mỗi lượt gọi (10 lượt, khoảng 1 phút); bản đầu gọi từng thành phố bị lỗi mạng liên tục trên GitHub Actions và ước mất khoảng 4 giờ (lần chạy thử 10/11 phải hủy). Lưu thành `<bang>__<thanh_pho>__recent.json`; `build_environment.py` ghép với lịch sử, ngày trùng thì lấy bản tải sau. Đây là **bước mềm**: lỗi hoặc quá 15 phút thì pipeline ghi cảnh báo (hiện trên trang tóm tắt của lần chạy) và chạy tiếp với số liệu thời tiết cũ, vì thời tiết chỉ phục vụ RQ4. Mỗi bước có giới hạn thời gian riêng (`TIMEOUT` trong `pipelines/01_ingest.py`); cả job tối đa 60 phút, bình thường khoảng 15 phút.
 4. Dựng lại bảng: `profile_sample` → `profile_dataset` → `build_thresholds` → `build_environment`.
 5. **Cổng chất lượng:** `audit_data.py --strict`. Có nguồn không đạt thì dừng, không đẩy.
 6. `upload_hf.py`: chỉ đẩy file `raw/` mới, `manifest.jsonl` và bảng `samples/`, `reference/` có thay đổi. Manifest trên máy phải bắt đầu bằng đúng manifest trên HF (chỉ thêm dòng); commit dùng `parent_commit` nên nếu có người đẩy chen giữa thì HF từ chối thay vì ghi đè.

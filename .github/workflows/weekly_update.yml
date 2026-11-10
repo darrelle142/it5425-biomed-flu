@@ -28,7 +28,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 60  # binh thuong ~15 phut; moi buoc con co gioi han rieng trong pipelines/01_ingest.py
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       HF_REPO: ${{ vars.HF_REPO }}
