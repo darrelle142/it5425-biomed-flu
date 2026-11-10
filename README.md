@@ -72,6 +72,11 @@ Hướng dẫn dựng lại dữ liệu khi lỗi, kể cả khi phải dùng VP
 | 8b. Hồ sơ dữ liệu | `python scripts/profile_extras.py`, `profile_dataset.py` | `samples/wval_state_week`, `vaccine_state_season` |
 | 9. Kiểm tra độ đầy đủ | `python scripts/audit_data.py` (`--strict`: thoát mã 1 nếu có nguồn không đạt) | `samples/audit_results.json` |
 | 10. Đẩy lên Hugging Face | `python scripts/upload_hf.py` | Chỉ đẩy phần mới; manifest chỉ được thêm dòng; không ghi đè khi có người đẩy chen giữa |
+| 11. Kiểm tra toàn vẹn | `python scripts/verify_integrity.py` | Đối chiếu manifest ↔ file trên máy ↔ Hugging Face (sha256) |
+| 12. Sao lưu | `python scripts/backup_hf.py` | Sao chép sang repo riêng tư `DragonBornRay/FluDataset-backup`, gắn lại cùng tag |
+| 13. Khôi phục | `python scripts/restore.py [--revision vYYYY-MM-DD]` | Tải từ bản sao, kiểm tra, dựng lại bảng và so sánh (đã chạy thử 10/11/2026: đạt) |
+
+Cơ chế bảo toàn dữ liệu thô và kết quả chạy thử khôi phục: [`docs/bao_toan_du_lieu.md`](docs/bao_toan_du_lieu.md).
 
 `crawl_cities_weather.py` và `crawl_missing.py` import từ `crawl_sample.py`, nên chạy bằng `python scripts/...` (không dùng `python -I`).
 
