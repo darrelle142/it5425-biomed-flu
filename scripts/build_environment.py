@@ -57,6 +57,13 @@ def to_week(d):
     return d + pd.to_timedelta((5 - d.dt.weekday) % 7, unit="D")
 
 
+def full_weeks(df):
+    """Bo tuan cuoi chua du 7 ngay (so lieu Open-Meteo dung giua tuan)."""
+    last = df.date.max()
+    last_sat = last - pd.Timedelta(days=(last.weekday() - 5) % 7)
+    return df[df.week <= last_sat]
+
+
 wrows, prows, missing = [], [], []
 top = cities.groupby("state").population.transform("max") == cities.population
 for (_, r), is_top in zip(cities.iterrows(), top):
@@ -78,6 +85,7 @@ wx["temp"] = pd.to_numeric(wx.temp, errors="coerce")
 wx["rh"] = pd.to_numeric(wx.rh, errors="coerce")
 wx["ah"] = 6.112 * np.exp(17.67 * wx.temp / (wx.temp + 243.5)) * wx.rh * 2.1674 / (273.15 + wx.temp)
 wx["week"] = to_week(wx.date)
+wx = full_weeks(wx)
 cw = wx.groupby(["state", "city", "week"], as_index=False).agg(w=("w", "first"), temp=("temp", "mean"), ah=("ah", "mean"))
 cw = cw.dropna(subset=["ah"])
 
@@ -92,6 +100,7 @@ ws = ws.rename(columns={"temp": "temp_mean", "ah": "abs_humidity"})
 
 pm = pd.concat(prows)
 pm["week"] = to_week(pm.date)
+pm = full_weeks(pm)
 cp = pm.dropna(subset=["pm25"]).groupby(["state", "city", "week"], as_index=False).agg(
     w=("w", "first"), pm25_mean=("pm25", "mean"), pm25_max=("pm25", "max"))
 ps = cp.groupby(["state", "week"]).apply(lambda g: wavg(g, ["pm25_mean", "pm25_max"]), include_groups=False).reset_index()
