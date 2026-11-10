@@ -28,3 +28,6 @@ desktop.ini
 ~$*
 .vscode/
 .idea/
+
+# Commit Hugging Face da tai (download_data.py)
+data/.hf_revision
