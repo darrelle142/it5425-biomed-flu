@@ -1,5 +1,7 @@
 # Yêu cầu môn học
 
+> 📍 [Mục lục tài liệu](README.md) · Kế hoạch: [ke_hoach.md](ke_hoach.md)
+
 ## Topic được giao
 
 Statistical modelling in biomedicine, models, methods and prediction; test statistics, goodness of fit test, model evaluation, ROC curve.

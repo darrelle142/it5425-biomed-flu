@@ -3,6 +3,9 @@ dataset/
 data/.gitattributes
 data/raw/
 data/samples/
+data/clean/
+data/business/
+data/sandbox/
 data/.cache/
 *.csv.gz
 *.json.gz

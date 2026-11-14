@@ -1,6 +1,8 @@
-# Kế hoạch: tự động tải dữ liệu, bỏ phụ thuộc VPN
+# Thu thập dữ liệu tự động và nguồn bị chặn (tài liệu kỹ thuật)
 
-Cập nhật 08/11/2026. Người phụ trách đề xuất: Người 2 (data engineer CDC).
+> 📍 [Mục lục tài liệu](README.md) · Bảo toàn và khôi phục dữ liệu: [bao_toan_du_lieu.md](bao_toan_du_lieu.md) · Kế hoạch hiện hành: [ke_hoach.md](ke_hoach.md)
+
+Cập nhật 14/11/2026. Người phụ trách: TV1 (thu thập và bảo toàn dữ liệu, theo `docs/phan_cong.md`). Kế hoạch này đã thực hiện xong; tài liệu giữ lại để tra cứu: nguồn dữ liệu và quyền truy cập (mục 1), cách tải nguồn bị chặn (mục 2), dữ liệu đủ cho RQ nào (mục 8), dựng lại dữ liệu khi lỗi (mục 9).
 
 Đọc nhanh: dữ liệu có đủ cho kế hoạch v2 không → **mục 8**. Dữ liệu lỗi, cần tải lại hoặc phải dùng VPN → **mục 9**.
 
@@ -19,7 +21,7 @@ Kiểm tra ngày 08/11/2026 từ máy ở Việt Nam, không bật VPN, gọi đ
 | 7a | Open-Meteo Historical Weather | `temp_mean`, `abs_humidity`, `ah_anomaly`; RQ4 | `crawl_sample.py weather`, `crawl_cities_weather.py` | ✅ | Liên tục (trễ ~5 ngày) | Chạy tay từ VN được; chưa có lịch |
 | 7b | Open-Meteo Air Quality + EPA AirData | `pm25_mean`, `pm25_max`; RQ4 | Open-Meteo (từ 08/2022) + EPA (`crawl_missing.py`, 2010–2026) | ✅ | EPA: vài lần mỗi năm | Chạy lại EPA đầu 01/2027 |
 | 8 | CDC FluVaxView | `flu_vax_pct`; RQ4 | File "Influenza Vaccination Coverage for All Ages (6+ Months)" trên data.cdc.gov (tải tay) | ❌ 403 (data.cdc.gov) | Hằng tháng, trễ 1–2 tháng | **Workflow `crawl_cdc.yml`** |
-| 9 | Census Vintage 2025 | Dân số bang, trọng số thành phố | File tải tay (bang, đô thị, Gazetteer) | ❌ 403 (census.gov) | Hằng năm | Không cần: đã đủ. Vintage 2026 (dự kiến 12/2026) chỉ cần nếu muốn cập nhật |
+| 9 | Census Vintage 2025 | Dân số bang, trọng số thành phố | File tải tay (bang, đô thị, Gazetteer) | ❌ 403 (census.gov); từ GitHub Actions tải được | Hằng năm | Không cần: đã đủ. Vintage 2026 (dự kiến 12/2026) nếu cần thì tải qua GitHub Actions, không cần VPN |
 | – | Ngày lễ, kỳ nghỉ | `holiday_week`, `weeks_to_holiday`; RQ4 | Tự tạo (`build_reference.py`) | Không cần mạng | – | – |
 | – | Dân số 2020 của Delphi (map tên bang) | Khóa bang | GitHub raw | ✅ | Cố định | – |
 
@@ -102,7 +104,7 @@ Nếu không thấy mục Settings thì bạn chưa có quyền admin; nhờ ch�
 
 **Bước 3: Chạy thử workflow**
 
-GitHub chỉ hiện nút chạy tay khi file workflow đã có trên nhánh mặc định (`main`). Vì vậy cần gộp nhánh `trongdung` vào `main` (qua Pull Request), rồi:
+Workflow đã có trên nhánh `main` (GitHub chỉ hiện nút chạy tay và chỉ chạy lịch từ nhánh mặc định). Muốn chạy tay:
 
 1. Tab **Actions → "Tai nguon CDC (WVAL, vaccine, nguong)" → Run workflow**.
 2. Giữ `dry_run` được tích, bấm **Run workflow**. Mở lần chạy để xem bảng kết quả: 3 nguồn trả 200 nghĩa là máy chủ GitHub không bị CDC chặn.
@@ -112,31 +114,23 @@ GitHub chỉ hiện nút chạy tay khi file workflow đã có trên nhánh mặ
 
 Mỗi người kéo nhánh mới nhất của repo GitHub rồi chạy `python scripts/download_data.py` (mặc định là `DragonBornRay/FluDataset`). Chỉ đẩy dữ liệu lên repo này.
 
-## 4. Việc cần làm
+## 4. Trạng thái (14/11/2026)
 
-| # | Việc | Ai | Trạng thái |
-| --- | --- | --- | --- |
-| 1 | Viết `scripts/crawl_cdc_us.py` | Claude / Người 2 | Xong |
-| 2 | Viết `.github/workflows/crawl_cdc.yml` | Claude / Người 2 | Xong |
-| 3 | Chạy thử trên máy: dry-run thật từ Việt Nam (WVAL, vaccine báo lỗi 403 đúng cách, trang ngưỡng 200, không ghi gì); 5 test logic với phản hồi giả lập từ file 01/11 (không lưu bản trùng, lưu bản mới, chặn khi đổi cột, lấy manifest từ HF) | Claude | Xong. Bước đẩy lên HF chưa test được vì cần token write |
-| 4 | Kiểm tra từng nguồn của kế hoạch v2 truy cập được từ Việt Nam (mục 1) | Claude | Xong |
-| 5 | Cho phép đổi repo HF (`--repo`, `HF_REPO`) trong `download_data.py`, `crawl_cdc_us.py`, workflow | Claude | Xong |
-| 6 | Thử repo riêng `DragonBornRay/FluDataset` (mục 3) | Dũng | Đã bỏ 09/11, gộp về `DragonBornRay/FluDataset` |
-| 6a | Cập nhật Delphi đến 31/10, dựng lại `samples/`, upload và đối chiếu 559/559 file | Dũng | Xong 08/11 |
-| 6b | Tạo token write cho GitHub Actions trên `DragonBornRay/FluDataset` (mục 3, bước 1) | Hiếu (chủ repo HF) | Chưa |
-| 7 | Thêm secret `HF_TOKEN` và variable `HF_REPO` vào GitHub repo | Người có quyền admin repo GitHub | Chưa |
-| 8 | Commit trên nhánh `trongdung`, mở Pull Request và gộp vào `main` (lịch và nút chạy tay chỉ có trên nhánh mặc định) | Dũng / nhóm | Chưa |
-| 9 | Bấm "Run workflow" với `dry_run = true`: xác nhận data.cdc.gov không chặn runner, id tìm đúng, cột khớp | Người 2 | Chưa |
-| 10 | Chạy thật lần đầu (`dry_run = false`), kiểm tra commit mới trên HF và chạy `audit_data.py` | Người 2 | Chưa |
-| 11 | Sửa id NWSS và vaccine trong kế hoạch v2 theo id thật trong manifest | Người 2 | Chưa |
-| 12 | Cập nhật `can_tai_tay.txt` và `README.md`: tải tay chỉ còn là phương án dự phòng | Claude | Xong |
+Mọi việc của kế hoạch này đã xong, trừ lịch tự chạy. Danh sách việc chi tiết trước đây đã được rút gọn thành bảng dưới.
+
+| Việc | Trạng thái | Bằng chứng |
+| --- | --- | --- |
+| Script `crawl_cdc_us.py`, workflow `crawl_cdc.yml` | Xong | Trên `main` (PR #1) |
+| Secret `HF_TOKEN`, biến `HF_REPO`, repo chung `DragonBornRay/FluDataset` | Xong 09/11 | Mục 3 |
+| Chạy thử (dry-run) trên GitHub: data.cdc.gov không chặn máy chủ GitHub | Xong 09/11 | Lần chạy 42594417853 |
+| Chạy thật, đẩy lên Hugging Face | Xong 10/11, 14/11 | Commit "Tu dong tai CDC ..." trên HF |
+| Id thật: nước thải `atcp-73re`, vaccine `vh55-3he6` | Xong | Manifest, mục 1 |
+| Cập nhật hằng tuần toàn bộ, kiểm tra toàn vẹn, tag, sao lưu, khôi phục | Xong 10/11–14/11 | Mục 7, `docs/bao_toan_du_lieu.md`, tag `v2026-11-14` |
+| **Lịch tự chạy thứ Bảy** | **Chưa kích hoạt lần nào** (đến 14/11 chỉ có lần chạy bấm tay) | Tab Actions; xem mục 6 |
 
 ## 5. Kiểm thử và tiêu chí hoàn thành
 
-- Lần chạy tay đầu tiên trên GitHub: 3/3 nguồn trả 200, cột khớp, id được ghi trong log.
-- Sau lần chạy thật: trên HF có `raw/cdc_wastewater_wval/<ngày>/...csv` mới (nếu CDC đã cập nhật), manifest có dòng `runner: github-actions`; tải về bằng `download_data.py` rồi chạy `audit_data.py` không báo file chưa ghi hay dòng trỏ file mất.
-- Chạy lại ngay lần hai: mọi nguồn báo `unchanged`, không có file mới trên HF.
-- Hai tuần liên tiếp chạy theo lịch thành công mà không ai phải bật VPN.
+Đã đạt (xem mục 4). Tiêu chí còn lại: hai thứ Bảy liên tiếp workflow **tự chạy theo lịch** thành công mà không ai phải bấm tay.
 
 ## 6. Rủi ro và phương án dự phòng
 
@@ -149,6 +143,7 @@ Mỗi người kéo nhánh mới nhất của repo GitHub rồi chạy `python s
 | Kho HF lớn dần (WVAL ~75 MB mỗi bản có thay đổi) | Khoảng 30 tuần × 75 MB ≈ 2,3 GB vẫn trong giới hạn HF. `download_data.py --samples` không bị ảnh hưởng; bản đầy đủ sẽ tải lâu hơn, cân nhắc thêm tùy chọn chỉ tải bản mới nhất nếu cần |
 | Trang ngưỡng đổi mà không ai chạy lại `build_thresholds.py` | Giai đoạn 2: workflow so bảng ngưỡng tách từ trang mới với `reference/cdc_level_thresholds.csv` và báo khi khác |
 | Delphi đổi API (bản cũ đã ngừng từ 22/09/2026) | Theo dõi trang Delphi; V5 hiện đang hoạt động |
+| Lịch `schedule` của GitHub không kích hoạt (đến 14/11 chưa lần nào) | Kiểm tra tab Actions xem workflow có bị tắt; đặt phút lẻ trong `cron` (GitHub hay bỏ lịch đúng phút :00 khi đông); trong lúc chờ, TV1 bấm "Run workflow" tay mỗi thứ Bảy |
 
 ## 7. Giai đoạn 2: cập nhật hằng tuần toàn bộ
 
@@ -166,7 +161,7 @@ Các bước (đều nằm trong `pipelines/01_ingest.py`, chạy được cả 
 
 Chạy tay: tab **Actions → "Cap nhat du lieu hang tuan" → Run workflow**. Mặc định không đẩy (`upload` bỏ tích) để chạy thử; lịch thứ Bảy luôn đẩy.
 
-Còn lại cho giai đoạn sau: gọi `pipelines/02`–`05` của TV2–TV5 khi các bạn bàn giao; kiểm tra toàn vẹn sha256 trên HF hằng tuần; tag phiên bản; bản sao lưu thứ hai.
+Còn lại: gọi `pipelines/02`–`05` của TV2–TV5 khi các bạn bàn giao. Kiểm tra toàn vẹn, tag phiên bản và bản sao lưu đã có (10/11), xem `docs/bao_toan_du_lieu.md`.
 
 ## 8. Dữ liệu đã đủ để bám kế hoạch v2 chưa
 

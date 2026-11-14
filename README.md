@@ -12,7 +12,11 @@ Project môn Quản trị dữ liệu và trực quan hóa. Dashboard theo tuầ
 | RQ4 | Yếu tố nào (độ ẩm tuyệt đối, PM2.5, vaccine, kỳ nghỉ lễ) đi kèm mùa cúm sớm hoặc nặng hơn, trễ bao nhiêu tuần? |
 | RQ5 | 1–4 tuần tới có vượt ngưỡng báo động không, và cần chuẩn bị gì? |
 
-Kế hoạch chi tiết: [`docs/ke_hoach_v2.docx`](docs/ke_hoach_v2.docx).
+Tài liệu: **bắt đầu từ [`docs/README.md`](docs/README.md)** (mục lục, đọc theo thứ tự nào, mỗi file để làm gì).
+
+- [`docs/ke_hoach.md`](docs/ke_hoach.md): kế hoạch hiện hành, lịch làm song song 14/11–22/11/2026, hợp đồng dữ liệu.
+- [`docs/phan_cong.md`](docs/phan_cong.md): việc chi tiết của từng thành viên.
+- [`docs/ke_hoach_v2.docx`](docs/ke_hoach_v2.docx): kế hoạch gốc (định nghĩa, phương pháp); điểm đã thay đổi ở `docs/ke_hoach.md` mục 10.
 
 ## Cấu trúc thư mục
 
@@ -43,12 +47,14 @@ Thư viện nằm trong `src/fluwatch/`, lệnh chạy nằm ngoài (`pipelines/
 │   ├── README.md             thẻ dữ liệu, giống trang Hugging Face
 │   ├── reference/            bảng tra cứu nhỏ: ngưỡng CDC, thành phố, ngày lễ   [git]
 │   ├── raw/                  dữ liệu gốc theo raw/<nguồn>/<ngày tải>/ + manifest  [Hugging Face]
-│   ├── samples/              bảng đã xử lý bang × tuần                            [Hugging Face]
-│   └── sandbox/              dữ liệu giả lập (tạo khi cần, không commit)
-├── notebooks/                phân tích và mô hình (xem notebooks/README.md)
-├── dashboard/                mã hoặc file dashboard
-├── reports/                  báo cáo PDF, slide
-└── docs/                     kế hoạch, yêu cầu môn học, hạn chế dữ liệu, bảo toàn dữ liệu, lịch tải tay
+│   ├── samples/              bảng thử bang × tuần (nguồn của load.py đến 16/11)   [Hugging Face]
+│   ├── clean/                mỗi nguồn một bảng Parquet đã chuẩn hóa (TV2)        [Hugging Face]
+│   ├── business/             star schema fact_*, dim_* (TV2; dùng từ 17/11)       [Hugging Face]
+│   └── sandbox/              dữ liệu giả lập (TV4, TV5)                           [Hugging Face]
+├── notebooks/                khám phá, trình bày (xem notebooks/README.md)
+├── models/                   mô hình đã huấn luyện (.joblib, TV5)
+├── reports/                  figures/, chapters/, báo cáo PDF, slide
+└── docs/                     kế hoạch, phân công, yêu cầu môn học, hạn chế dữ liệu, bảo toàn dữ liệu
 ```
 
 Dùng thư viện trong notebook: chạy một lần `pip install -e .` ở thư mục gốc, rồi `from fluwatch.ingest.paths import Paths`. Các lệnh trong `scripts/` tự thêm `src/` vào đường dẫn nên không cần cài.
@@ -102,9 +108,9 @@ Cơ chế bảo toàn dữ liệu thô và kết quả chạy thử khôi phục
 
 ## Nguồn CDC bị chặn từ Việt Nam
 
-`data.cdc.gov` trả lỗi 403 cho máy ở Việt Nam. Nước thải WVAL (hằng tuần), độ phủ vaccine (hằng tháng) và trang ngưỡng CDC được tải tự động bằng GitHub Actions (máy chủ ở Mỹ) qua workflow [`crawl_cdc.yml`](.github/workflows/crawl_cdc.yml), chạy 10:00 sáng thứ Bảy giờ Việt Nam và đẩy thẳng lên Hugging Face. Cần secret `HF_TOKEN` trong repo GitHub. Kế hoạch và các bước cài đặt: [`docs/ke_hoach_tu_dong_crawl_cdc.md`](docs/ke_hoach_tu_dong_crawl_cdc.md).
+`data.cdc.gov` trả lỗi 403 cho máy ở Việt Nam. Nước thải WVAL (hằng tuần), độ phủ vaccine (hằng tháng) và trang ngưỡng CDC được tải tự động bằng GitHub Actions (máy chủ ở Mỹ) qua workflow [`crawl_cdc.yml`](.github/workflows/crawl_cdc.yml), chạy 10:00 sáng thứ Bảy giờ Việt Nam và đẩy thẳng lên Hugging Face. Secret `HF_TOKEN` đã có; workflow đã chạy thật ngày 10/11 và 14/11 (bấm tay; lịch tự chạy chưa kích hoạt lần nào, đang kiểm tra). Kế hoạch và các bước cài đặt: [`docs/ke_hoach_tu_dong_crawl_cdc.md`](docs/ke_hoach_tu_dong_crawl_cdc.md).
 
-Nếu workflow báo lỗi (job đỏ), dùng phương án dự phòng: bật VPN Mỹ rồi chạy `python scripts/crawl_cdc_us.py --upload`, hoặc tải bằng trình duyệt theo [`docs/can_tai_tay.txt`](docs/can_tai_tay.txt).
+Nếu workflow báo lỗi (job đỏ), dùng phương án dự phòng: bật VPN Mỹ rồi chạy `python scripts/crawl_cdc_us.py --upload` (chi tiết: `docs/ke_hoach_tu_dong_crawl_cdc.md` mục 9.4).
 
 ## Cập nhật dữ liệu lên Hugging Face
 
@@ -123,14 +129,16 @@ Xem [`docs/han_che_du_lieu.md`](docs/han_che_du_lieu.md).
 
 ## Phân công
 
-| Người | Vai trò |
-| --- | --- |
-| 1 | Trưởng nhóm: nghiệp vụ, bảng bằng chứng, quản trị dữ liệu, tổng hợp báo cáo |
-| 2 | Data engineer CDC: pipeline Delphi hằng tuần, số liệu theo ngày công bố, tải tay |
-| 3 | Data engineer môi trường và tích hợp: star schema, kiểm tra tầng 1, chèn lỗi |
-| 4 | Phân tích mùa vụ: mốc mùa, EDA, phân cụm, tương quan trễ (RQ1–RQ3) |
-| 5 | Mô hình: kiểm tra phương pháp, Negative Binomial (RQ4), mô hình cảnh báo (RQ5) |
-| 6 | Dashboard và storytelling |
+Chi tiết trong [`docs/phan_cong.md`](docs/phan_cong.md); lịch trong [`docs/ke_hoach.md`](docs/ke_hoach.md).
+
+| TV | Vai trò | Gói code | Chương báo cáo |
+| --- | --- | --- | --- |
+| 1 | Thu thập dữ liệu, server tự động, bảo toàn dữ liệu; ghép quyển báo cáo | `ingest/`, `pipelines/01_ingest.py` | 1, 2.1 |
+| 2 | Kho dữ liệu (data lake, star schema), chất lượng và quản trị dữ liệu | `warehouse/` | 2.2–2.4 |
+| 3 | Mùa vụ, EDA, phân cụm bang (RQ1–RQ3) | `seasonality/` | 3 |
+| 4 | Giả lập, yếu tố ảnh hưởng, Negative Binomial (RQ4) | `risk_factors/` | 4 |
+| 5 | Mô hình cảnh báo, ROC, calibration (RQ5) | `alerting/` | 5 |
+| 6 | Dashboard Streamlit, storytelling, slide | `dashboard/` | 6, Kết luận |
 
 ## Nguồn và giấy phép dữ liệu
 

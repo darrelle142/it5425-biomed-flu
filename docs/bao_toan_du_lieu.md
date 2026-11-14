@@ -1,5 +1,7 @@
 # Bảo toàn dữ liệu thô
 
+> 📍 [Mục lục tài liệu](README.md) · Dựng lại dữ liệu khi lỗi: [ke_hoach_tu_dong_crawl_cdc.md](ke_hoach_tu_dong_crawl_cdc.md) mục 9
+
 Cập nhật 10/11/2026. Người phụ trách: Thành viên 1.
 
 Mục tiêu: dữ liệu thô đã tải **không bao giờ bị sửa, ghi đè hay mất**; mọi thay đổi đều truy được nguồn gốc; khi kho chính hỏng thì khôi phục lại được đúng trạng thái của một tuần bất kỳ.
