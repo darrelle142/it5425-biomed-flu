@@ -29,6 +29,18 @@ TABLES = ["state_week_sample.csv.gz", "cdc_level_state_week.csv.gz", "wval_state
           "vaccine_state_season.csv", "weather_state_week.csv.gz", "epa_pm25_state_week.csv.gz"]
 
 
+def fresh_dir(out):
+    """Thu muc trong cho lan chay thu. Xoa ban cu; neu bi khoa (vd. OneDrive dang dong bo) thi dung ten moi."""
+    for _ in range(3):
+        if not out.exists():
+            return out
+        shutil.rmtree(out, ignore_errors=True)
+        time.sleep(2)
+    alt = out.with_name(f"{out.name}_{time.strftime('%Y%m%d_%H%M%S')}")
+    print(f"Khong xoa duoc {out} (file dang bi khoa); dung {alt}", flush=True)
+    return alt
+
+
 def compare(a, b):
     """Hai bang giong nhau (so thuc sai lech toi 1e-9 tuong doi)? Tra ve (dat, ghi chu)."""
     x, y = pd.read_csv(a), pd.read_csv(b)
@@ -57,10 +69,10 @@ def main():
         print(f"[{'DAT' if ok else 'LOI'}] {name} {note}", flush=True)
         return ok
 
-    # 1. Tai ve thu muc rieng, kem ban sao scripts/ de cac script doc dung data/ moi
-    if out.exists():
-        shutil.rmtree(out)
-    shutil.copytree(ROOT / "scripts", out / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+    # 1. Tai ve thu muc rieng, kem ban sao scripts/ va src/ de cac script doc dung data/ moi
+    out = fresh_dir(out)
+    for d in ("scripts", "src"):  # ban sao lenh chay + thu vien: moi duong dan tinh tu out/
+        shutil.copytree(ROOT / d, out / d, ignore=shutil.ignore_patterns("__pycache__"))
     sha = HfApi(token=token).dataset_info(a.repo, revision=a.revision).sha
     snapshot_download(a.repo, repo_type="dataset", revision=sha, local_dir=out / "data", token=token)
     (out / "data" / ".hf_revision").write_text(f"{a.repo} {sha}\n", encoding="utf-8")

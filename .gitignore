@@ -33,4 +33,4 @@ desktop.ini
 data/.hf_revision
 
 # Thu muc chay thu khoi phuc (scripts/restore.py)
-restore_test/
+restore_test*/

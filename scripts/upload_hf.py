@@ -14,85 +14,42 @@ Bao toan du lieu tho:
 - Manifest tren may phai bat dau bang dung toan bo manifest tren HF (chi them dong, khong sua, khong xoa).
 - Commit dua tren commit da tai (data/.hf_revision); neu co nguoi day len chen giua thi HF tu choi,
   khong ghi de. Khi do tai lai (download_data.py), chay lai pipeline roi day.
+Logic: src/fluwatch/ingest/hf.py.
 """
 import argparse
-import datetime as dt
-import hashlib
-import json
 import os
 import sys
 from pathlib import Path
 
-from huggingface_hub import CommitOperationAdd, HfApi, hf_hub_download
-
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data"
-MANIFEST = "raw/manifest.jsonl"
-SKIP = ("samples/preview_",)
+sys.path.insert(0, str(ROOT / "src"))
 
+from huggingface_hub import CommitOperationAdd, HfApi  # noqa: E402
 
-def sha256(p):
-    return hashlib.sha256(Path(p).read_bytes()).hexdigest()
-
-
-def git_blob_sha1(p):  # file nho (khong qua LFS) duoc HF dinh danh bang sha1 kieu git
-    b = Path(p).read_bytes()
-    return hashlib.sha1(b"blob %d\0" % len(b) + b).hexdigest()
+from fluwatch.ingest import hf  # noqa: E402
+from fluwatch.ingest.paths import Paths  # noqa: E402
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--repo", default=os.environ.get("HF_REPO") or "DragonBornRay/FluDataset")
+    ap.add_argument("--repo", default=os.environ.get("HF_REPO") or hf.MAIN_REPO)
     ap.add_argument("-m", "--message", default="Cap nhat du lieu")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--tag", action="store_true", help="gan tag vYYYY-MM-DD cho commit vua day (trung thi them -2, -3...)")
     a = ap.parse_args()
     token = os.environ.get("HF_TOKEN") or None
     api = HfApi(token=token)
+    paths = Paths(ROOT)
 
-    rev_file = DATA / ".hf_revision"
-    if not rev_file.exists():
-        sys.exit("Thieu data/.hf_revision: chay scripts/download_data.py truoc de biet ban HF goc.")
-    repo, parent = rev_file.read_text(encoding="utf-8").split()
-    if repo.lower() != a.repo.lower():
-        sys.exit(f"data/ duoc tai tu {repo}, khong phai {a.repo}.")
+    try:
+        repo, parent = hf.read_revision(paths)
+        if repo.lower() != a.repo.lower():
+            raise hf.Refused(f"data/ duoc tai tu {repo}, khong phai {a.repo}.")
+        n_new, listed = hf.plan_upload(api, paths, a.repo, parent, token)
+    except hf.Refused as err:
+        sys.exit(f"{err} Dung lai.")
 
-    # 1. Manifest chi duoc them dong
-    remote_manifest = hf_hub_download(a.repo, MANIFEST, repo_type="dataset", revision=parent, token=token)
-    rem = Path(remote_manifest).read_text(encoding="utf-8").splitlines()
-    loc = (DATA / MANIFEST).read_text(encoding="utf-8").splitlines()
-    if loc[:len(rem)] != rem:
-        sys.exit("manifest tren may khong bat dau bang manifest tren HF (co dong bi sua hoac xoa). Dung lai.")
-    new_lines = [json.loads(x) for x in loc[len(rem):] if x.strip()]
-
-    # 2. File raw moi: co trong cac dong manifest moi, chua co tren HF
-    info = api.dataset_info(a.repo, revision=parent, files_metadata=True)
-    remote = {s.rfilename: s for s in info.siblings}
-    ops, listed = [], []
-    for m in new_lines:
-        rel = (m.get("file") or "").removeprefix("data/")
-        if not rel or rel in listed:
-            continue
-        if rel in remote:  # HF da co file nay: day len se ghi de (hoac bi bo qua) -> mat ban tai moi
-            sys.exit(f"Dong manifest moi tro toi {rel} nhung file nay da co tren HF; khong ghi de. Dung lai.")
-        if not (DATA / rel).exists():
-            sys.exit(f"manifest ghi {rel} nhung file khong co tren may.")
-        listed.append(rel)
-
-    # 3. Bang da xu ly, tra cuu, the du lieu: day neu khac ban tren HF
-    for p in [*sorted((DATA / "samples").glob("*.csv*")), *sorted((DATA / "reference").glob("*.csv")),
-              DATA / "README.md"]:
-        rel = p.relative_to(DATA).as_posix()
-        if rel.startswith(SKIP):
-            continue
-        r = remote.get(rel)
-        r_sha = r.lfs.sha256 if r is not None and r.lfs else None
-        if r is None or (r_sha and r_sha != sha256(p)) or (not r_sha and r.blob_id != git_blob_sha1(p)):
-            listed.append(rel)
-    if new_lines:
-        listed.append(MANIFEST)
-
-    print(f"Repo {a.repo}, dua tren commit {parent[:8]}; {len(new_lines)} dong manifest moi; {len(listed)} file:")
+    print(f"Repo {a.repo}, dua tren commit {parent[:8]}; {n_new} dong manifest moi; {len(listed)} file:")
     for rel in listed:
         print("  ", rel)
     if not listed:
@@ -101,24 +58,15 @@ def main():
     if a.dry_run:
         print("(dry-run) khong day.")
         return
-    ops = [CommitOperationAdd(path_in_repo=rel, path_or_fileobj=str(DATA / rel)) for rel in listed]
+    ops = [CommitOperationAdd(path_in_repo=rel, path_or_fileobj=str(paths.data / rel)) for rel in listed]
     c = api.create_commit(a.repo, ops, commit_message=a.message, repo_type="dataset", parent_commit=parent)
-    rev_file.write_text(f"{a.repo} {c.oid}\n", encoding="utf-8")
+    hf.write_revision(paths, a.repo, c.oid)
     print("Da day:", c.commit_url)
     if a.tag:
         try:  # du lieu da len HF; loi gan tag chi canh bao, gan lai tay duoc
-            tag_version(api, a.repo, c.oid, a.message)
+            print(f"Da gan tag {hf.tag_version(api, a.repo, c.oid, a.message)} cho commit {c.oid[:8]}")
         except Exception as err:
             print(f"CANH BAO: khong gan duoc tag cho {c.oid[:8]}: {err}")
-
-
-def tag_version(api, repo, oid, message):
-    """Gan tag phien ban cho commit: tai lai dung ban nay bang download_data.py --revision <tag>."""
-    have = {t.name for t in api.list_repo_refs(repo, repo_type="dataset").tags}
-    base = f"v{dt.datetime.now(dt.timezone.utc):%Y-%m-%d}"
-    name = base if base not in have else next(f"{base}-{i}" for i in range(2, 100) if f"{base}-{i}" not in have)
-    api.create_tag(repo, tag=name, revision=oid, tag_message=message, repo_type="dataset")
-    print(f"Da gan tag {name} cho commit {oid[:8]}")
 
 
 if __name__ == "__main__":
