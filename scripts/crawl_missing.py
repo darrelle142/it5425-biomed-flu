@@ -7,9 +7,19 @@ Khong thu lai va khong tim cach vuot qua khi bi 403: nguon nao bi chan thi ghi v
 data/raw/blocked_<ngay>.json de nhom tai tay.
 """
 import json
+import sys
 import time
+from pathlib import Path
 
-from crawl_sample import RAW, TODAY, fetch, save
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from fluwatch.ingest.net import fetch  # noqa: E402
+from fluwatch.ingest.paths import Paths  # noqa: E402
+from fluwatch.ingest.store import RawStore  # noqa: E402
+
+PATHS = Paths(ROOT)
+STORE = RawStore(PATHS)
 
 targets = []
 
@@ -33,10 +43,10 @@ for name, ds in [("nhsn_levels", "vdzy-6i9v"), ("nhsn_hrd", "ua7e-t2fy")]:
 blocked = []
 for source, name, url, gz in targets:
     status, body = fetch(url, timeout=600)
-    ok = save(source, name, url, status, body, gz=gz)
+    ok = STORE.save(source, name, url, status, body, gz=gz)
     if not ok:
         blocked.append({"source": source, "file": name, "url": url, "http_status": status})
     time.sleep(2)
 
-(RAW / f"blocked_{TODAY}.json").write_text(json.dumps(blocked, ensure_ascii=False, indent=1), encoding="utf-8")
+(PATHS.raw / f"blocked_{STORE.day}.json").write_text(json.dumps(blocked, ensure_ascii=False, indent=1), encoding="utf-8")
 print(f"\n{len(targets) - len(blocked)}/{len(targets)} file tai duoc; bi chan hoac loi: {len(blocked)}")
