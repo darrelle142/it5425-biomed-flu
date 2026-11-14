@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fluwatch"
+version = "0.1.0"
+description = "Dashboard giam sat va canh bao som mua cum theo bang o My (project mon Quan tri du lieu va truc quan hoa)"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=2.0",
+    "scipy>=1.13",
+    "scikit-learn>=1.5",
+    "statsmodels>=0.14",
+    "openpyxl>=3.1",
+    "huggingface_hub>=0.24",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
