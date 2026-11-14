@@ -16,24 +16,44 @@ Kế hoạch chi tiết: [`docs/ke_hoach_v2.docx`](docs/ke_hoach_v2.docx).
 
 ## Cấu trúc thư mục
 
+Thư viện nằm trong `src/fluwatch/`, lệnh chạy nằm ngoài (`pipelines/`, `scripts/`).
+
 ```
 .
 ├── README.md
 ├── requirements.txt
+├── pyproject.toml            gói fluwatch (pip install -e . để dùng trong notebook)
+├── src/fluwatch/             thư viện, mỗi thành viên một gói con
+│   ├── ingest/               TV1: thu thập, tự động hóa, bảo toàn dữ liệu thô
+│   │   ├── paths.py          đường dẫn data/, raw/, manifest (tính từ thư mục gốc của lệnh chạy)
+│   │   ├── net.py            tải HTTP; chờ khi bị 429, không thử vượt chặn 403
+│   │   ├── store.py          lưu file thô nguyên trạng + ghi manifest, không ghi đè
+│   │   ├── delphi.py         Delphi V5: ILINet, NHSN, NSSP, xét nghiệm, FluSurv, NWSS
+│   │   ├── openmeteo.py      thời tiết và PM2.5 theo thành phố (lịch sử, cập nhật hằng tuần)
+│   │   ├── hf.py             Hugging Face: kế hoạch đẩy lên, sao lưu, tag phiên bản
+│   │   └── integrity.py      kiểm tra toàn vẹn manifest ↔ file ↔ Hugging Face
+│   ├── warehouse/            TV2: clean/, business/, star schema, chất lượng
+│   ├── seasonality/          TV3: mốc mùa, EDA, phân cụm
+│   ├── risk_factors/         TV4: giả lập, yếu tố ảnh hưởng
+│   ├── alerting/             TV5: mô hình cảnh báo, ROC
+│   └── dashboard/            TV6: ứng dụng Streamlit
+├── pipelines/                mỗi thành viên một lệnh chạy: 01_ingest.py … 06_dashboard.py
+├── scripts/                  lệnh chạy từng bước (crawl, xây bảng, kiểm tra, sao lưu, khôi phục)
 ├── data/                     dữ liệu (chỉ reference/ được lưu trên GitHub)
 │   ├── README.md             thẻ dữ liệu, giống trang Hugging Face
 │   ├── reference/            bảng tra cứu nhỏ: ngưỡng CDC, thành phố, ngày lễ   [git]
 │   ├── raw/                  dữ liệu gốc theo raw/<nguồn>/<ngày tải>/ + manifest  [Hugging Face]
 │   ├── samples/              bảng đã xử lý bang × tuần                            [Hugging Face]
 │   └── sandbox/              dữ liệu giả lập (tạo khi cần, không commit)
-├── scripts/                  pipeline: crawl, xây bảng, kiểm tra
 ├── notebooks/                phân tích và mô hình (xem notebooks/README.md)
 ├── dashboard/                mã hoặc file dashboard
 ├── reports/                  báo cáo PDF, slide
-└── docs/                     kế hoạch, yêu cầu môn học, hạn chế dữ liệu, lịch tải tay
+└── docs/                     kế hoạch, yêu cầu môn học, hạn chế dữ liệu, bảo toàn dữ liệu, lịch tải tay
 ```
 
-Dữ liệu lớn (khoảng 290 MB) nằm trên Hugging Face: [DragonBornRay/FluDataset](https://huggingface.co/datasets/DragonBornRay/FluDataset). GitHub chỉ chứa mã, tài liệu và `data/reference/`.
+Dùng thư viện trong notebook: chạy một lần `pip install -e .` ở thư mục gốc, rồi `from fluwatch.ingest.paths import Paths`. Các lệnh trong `scripts/` tự thêm `src/` vào đường dẫn nên không cần cài.
+
+Dữ liệu lớn (khoảng 500 MB) nằm trên Hugging Face: [DragonBornRay/FluDataset](https://huggingface.co/datasets/DragonBornRay/FluDataset). GitHub chỉ chứa mã, tài liệu và `data/reference/`.
 
 ## Bắt đầu
 
