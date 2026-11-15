@@ -1,0 +1,25 @@
+# Thong tin chung cua quyen bao cao (TV1 sua). Ten thanh vien: moi nguoi bao TV1 dien dong cua minh.
+title: "Hệ thống dashboard giám sát và cảnh báo sớm mùa cúm theo bang ở Mỹ"
+subtitle: "Báo cáo project môn Quản trị dữ liệu và trực quan hóa"
+author:
+  - "TV1: Đặng Trung Hiếu (thu thập, tự động hóa, bảo toàn dữ liệu)"
+  - "TV2: [Họ tên] (kho dữ liệu, chất lượng dữ liệu)"
+  - "TV3: [Họ tên] (mùa vụ, EDA, phân cụm)"
+  - "TV4: [Họ tên] (giả lập, yếu tố ảnh hưởng)"
+  - "TV5: [Họ tên] (mô hình cảnh báo, ROC)"
+  - "TV6: [Họ tên] (dashboard, storytelling)"
+date: "Hà Nội, 22/11/2026"
+lang: vi
+toc-title: "Mục lục"
+link-citations: true
+# Chi dung cho PDF (xelatex)
+documentclass: report
+fontsize: 12pt
+mainfont: "Times New Roman"
+papersize: a4
+geometry: "top=2cm, bottom=2cm, left=3cm, right=2cm"
+linestretch: 1.3
+colorlinks: true
+# Nguon du lieu luon duoc liet ke trong Tai lieu tham khao, ke ca khi chua trich trong chuong
+nocite: |
+  @delphi_epidata, @cdc_fluview, @cdc_nhsn_hrd, @openmeteo, @fludataset

@@ -1,0 +1,4 @@
+# Chi can cho viec dung quyen bao cao va khuon slide (khong can cho pipeline du lieu)
+pypandoc_binary>=1.13
+python-docx>=1.1
+python-pptx>=1.0

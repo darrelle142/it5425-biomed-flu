@@ -37,3 +37,6 @@ data/.hf_revision
 
 # Thu muc chay thu khoi phuc (scripts/restore.py)
 restore_test*/
+
+# Quyen bao cao dung tu reports/build_report.py
+reports/build/
