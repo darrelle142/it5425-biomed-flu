@@ -105,10 +105,25 @@ def plan_backup(src_api, dst_api, paths, repo, revision, backup_repo):
     return main_files, todo
 
 
-def tag_version(api, repo, oid, message):
-    """Gan tag vYYYY-MM-DD (UTC; trung ngay thi -2, -3...) cho commit. Tra ve ten tag."""
+def tags_at(api, repo, commit):
+    """Ten cac tag tro toi `commit`. Tag co kem loi nhan tro toi doi tuong tag (target_commit khac ma commit),
+    nen phai hoi lai commit cua tung tag."""
+    return [t.name for t in api.list_repo_refs(repo, repo_type="dataset").tags
+            if api.dataset_info(repo, revision=t.name).sha == commit]
+
+
+VN = dt.timezone(dt.timedelta(hours=7))  # ten tag theo ngay gio Viet Nam (lich chay sang som thu Bay VN = toi thu Sau UTC)
+
+
+def tag_version(api, repo, oid, message, name=None):
+    """Gan tag cho commit. Mac dinh vYYYY-MM-DD theo ngay Viet Nam (trung ngay thi -2, -3...). Tra ve ten tag."""
     have = {t.name for t in api.list_repo_refs(repo, repo_type="dataset").tags}
-    base = f"v{dt.datetime.now(dt.timezone.utc):%Y-%m-%d}"
+    if name:
+        if name in have:
+            raise Refused(f"Tag {name} da co tren {repo}.")
+        api.create_tag(repo, tag=name, revision=oid, tag_message=message, repo_type="dataset")
+        return name
+    base = f"v{dt.datetime.now(VN):%Y-%m-%d}"
     name = base if base not in have else next(f"{base}-{i}" for i in range(2, 100) if f"{base}-{i}" not in have)
     api.create_tag(repo, tag=name, revision=oid, tag_message=message, repo_type="dataset")
     return name

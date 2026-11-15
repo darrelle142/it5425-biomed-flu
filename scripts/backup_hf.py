@@ -56,9 +56,9 @@ def main():
         print("  ", rel)
     if len(todo) > 15:
         print(f"   ... va {len(todo) - 15} file khac")
-    tags = [t for t in src.list_repo_refs(repo, repo_type="dataset").tags if t.target_commit == revision]
+    tags = hf.tags_at(src, repo, revision)
     if a.dry_run:
-        print("(dry-run) khong ghi gi. Tag se gan:", [t.name for t in tags])
+        print("(dry-run) khong ghi gi. Tag se gan:", tags)
         return
 
     oid = None
@@ -75,10 +75,10 @@ def main():
 
     have = {t.name for t in dst.list_repo_refs(a.backup_repo, repo_type="dataset").tags}
     for t in tags:
-        if t.name not in have:
-            dst.create_tag(a.backup_repo, tag=t.name, revision=oid, repo_type="dataset",
-                           tag_message=f"Ban sao cua {repo} tag {t.name} ({revision[:8]})")
-            print(f"Da gan tag {t.name} tren repo du phong")
+        if t not in have:
+            dst.create_tag(a.backup_repo, tag=t, revision=oid, repo_type="dataset",
+                           tag_message=f"Ban sao cua {repo} tag {t} ({revision[:8]})")
+            print(f"Da gan tag {t} tren repo du phong")
 
     # Doi chieu lai sau khi sao luu
     backup = {s.rfilename: s for s in dst.dataset_info(a.backup_repo, revision=oid, files_metadata=True).siblings}
