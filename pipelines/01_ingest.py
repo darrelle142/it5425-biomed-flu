@@ -14,6 +14,7 @@ Cac buoc (theo thu tu):
               canh bao, dung so lieu thoi tiet cu, van chay tiep)
     build     profile_sample -> profile_dataset -> build_thresholds -> build_environment
     audit     scripts/audit_data.py --strict           cong chat luong: loi thi dung, khong day
+    --only-if-new: chi chay khi Delphi co so lieu moi hon ban da luu (lich tu chay dung)
     upload    scripts/upload_hf.py --tag               chi khi co --upload; gan tag vYYYY-MM-DD cho ban vua day
     backup    scripts/backup_hf.py                     sau upload: sao luu sang repo du phong rieng tu (buoc mem)
 
@@ -68,11 +69,22 @@ def main():
     ap.add_argument("--steps", nargs="+", choices=list(STEPS), help="chi chay cac buoc nay")
     ap.add_argument("--upload", action="store_true", help="day len Hugging Face sau khi audit dat")
     ap.add_argument("-m", "--message", default="Cap nhat hang tuan (pipelines/01_ingest.py)")
+    ap.add_argument("--only-if-new", action="store_true",
+                    help="chi chay khi Delphi co so lieu moi hon ban da luu (lich tu chay dung, tranh tai trung)")
     a = ap.parse_args()
 
     steps = a.steps or DEFAULT
     if not a.steps and (ROOT / "data" / "raw" / "manifest.jsonl").exists():
         steps = [s for s in steps if s != "download"]  # da co du lieu tren may
+    if a.only_if_new:
+        sys.path.insert(0, str(ROOT / "src"))
+        from fluwatch.ingest import delphi
+        from fluwatch.ingest.paths import Paths
+        changed, note = delphi.new_updates(Paths(ROOT))
+        if not changed:
+            warn(f"Delphi chua co so lieu moi ({note}); bo qua lan chay nay.")
+            return
+        print(f"Delphi co so lieu moi: {note}", flush=True)
     for step in steps:
         for cmd in STEPS[step]:
             if run(cmd, TIMEOUT[step]) != 0:

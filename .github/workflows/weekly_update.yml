@@ -1,5 +1,5 @@
 # Cap nhat hang tuan: tai Delphi + thoi tiet, dung lai bang, kiem tra (cong chat luong), day len Hugging Face.
-# Chay sau crawl_cdc.yml (03:00 UTC) de dung luon WVAL, vaccine, trang nguong moi tai.
+# Chay sau crawl_cdc.yml (02:17 sang thu Bay gio Viet Nam) de dung luon WVAL, vaccine, trang nguong moi tai.
 # Can secret HF_TOKEN (token write tren repo dataset); bien HF_REPO tuy chon (mac dinh DragonBornRay/FluDataset).
 # Secret HF_BACKUP_TOKEN (token write chi tren repo du phong DragonBornRay/FluDataset-backup) de sao luu sau moi lan day.
 # Ke hoach: docs/ke_hoach_tu_dong_crawl_cdc.md
@@ -7,7 +7,9 @@ name: Cap nhat du lieu hang tuan
 
 on:
   schedule:
-    - cron: "0 6 * * 6"  # 06:00 UTC thu Bay = 13:00 gio Viet Nam
+    # Gio UTC; phut le vi GitHub hay tre/bo lich dat dung phut :00. Delphi cap nhat chieu thu Sau (UTC).
+    - cron: "17 21 * * 5"  # 04:17 sang thu Bay gio Viet Nam
+    - cron: "17 21 * * 6"  # 04:17 sang Chu nhat: du phong; tu bo qua neu Delphi khong co gi moi
   workflow_dispatch:
     inputs:
       upload:
@@ -52,11 +54,13 @@ jobs:
       - name: Thu thap, dung bang, kiem tra (va day len)
         env:
           UPLOAD: ${{ github.event_name == 'schedule' || inputs.upload }}
+          SCHEDULED: ${{ github.event_name == 'schedule' }}
           STEPS: ${{ inputs.steps }}
         run: |
           args=()
           if [ -n "$STEPS" ]; then args+=(--steps $STEPS); fi
           if [ "$UPLOAD" = "true" ]; then args+=(--upload); fi
+          if [ "$SCHEDULED" = "true" ]; then args+=(--only-if-new); fi
           python pipelines/01_ingest.py "${args[@]}" -m "Tu dong cap nhat hang tuan $(date -u +%F) (github-actions)"
 
       - name: Tom tat kiem tra toan ven va audit

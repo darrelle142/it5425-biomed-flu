@@ -6,7 +6,9 @@ name: Tai nguon CDC (WVAL, vaccine, nguong)
 
 on:
   schedule:
-    - cron: "0 3 * * 6"  # 03:00 UTC thu Bay = 10:00 gio Viet Nam, sau ban cap nhat thu Sau cua CDC
+    # Gio UTC; phut le vi GitHub hay tre/bo lich dat dung phut :00. CDC cap nhat WVAL thu Sau (gio My).
+    - cron: "17 19 * * 5"  # 02:17 sang thu Bay gio Viet Nam
+    - cron: "17 19 * * 6"  # 02:17 sang Chu nhat: du phong; du lieu khong doi thi chi ghi mot dong "unchanged"
   workflow_dispatch:
     inputs:
       dry_run:

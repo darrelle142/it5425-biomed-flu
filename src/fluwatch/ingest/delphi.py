@@ -1,4 +1,5 @@
 """Delphi Epidata V5: ILINet, NHSN, NSSP, xet nghiem, FluSurv-NET, NWSS (ban chup + lich su sua so)."""
+import json
 import time
 import urllib.parse
 
@@ -53,3 +54,25 @@ def crawl(store):
         status, body = fetch(url, timeout=500)
         store.save(source, f"archive__{signal}__{geo}.csv", url, status, body)
         time.sleep(ARCHIVE_WAIT)
+
+SOURCES = sorted({s for s, _, _ in SNAPSHOTS})
+
+
+def latest_saved_metadata(paths):
+    """Ban metadata Delphi tai gan nhat trong raw/delphi_meta/ (hoac None)."""
+    files = sorted(paths.raw.glob("delphi_meta/*/metadata*.json"), key=lambda p: (p.parent.name, p.name))
+    return json.loads(files[-1].read_text(encoding="utf-8")) if files else None
+
+
+def new_updates(paths):
+    """Nguon Delphi nao co latest_update moi hon ban metadata da luu. Tra ve (danh sach nguon, ghi chu).
+
+    Dung de lich tu chay chi lam viec khi Delphi da co so lieu moi (khong tai trung moi tuan).
+    """
+    status, body = fetch(f"{V5}/metadata/", timeout=60)
+    if status != 200:
+        return SOURCES, f"khong doc duoc metadata Delphi (HTTP {status}): coi nhu co moi"
+    now, old = json.loads(body), latest_saved_metadata(paths) or {}
+    changed = [s for s in SOURCES if (now.get(s) or {}).get("latest_update") != (old.get(s) or {}).get("latest_update")]
+    note = ", ".join(f"{s} {(now.get(s) or {}).get('latest_update')}" for s in changed) or "khong nguon nao doi"
+    return changed, note
