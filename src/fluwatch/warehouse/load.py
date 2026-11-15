@@ -11,7 +11,6 @@ Quy uoc: `state` ma 2 chu viet thuong, chi 50 bang + DC; `week` la ngay thu Bay 
 `season` dang 2024-25, bat dau tu tuan MMWR 40; `season_week` = 1 o tuan MMWR 40.
 Moi ham tra ve mot DataFrame moi (sua thoai mai, khong anh huong lan goi sau).
 """
-import datetime as dt
 import functools
 import logging
 import os
@@ -21,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from fluwatch.ingest.paths import Paths
+from fluwatch.warehouse.common import NON_CONTIGUOUS, STATE_TO_HHS, STATES, season_of
 
 log = logging.getLogger(__name__)
 
@@ -45,22 +45,6 @@ SEASON_SUMMARY_COLS = ["state", "season", "flu_vax_pct"] + MILESTONE_COLS
 PRELIM_WEEKS = 4                      # 4 tuan gan nhat la so lieu so bo
 AH_CLIMATOLOGY_YEARS = (2010, 2025)   # ah_anomaly: tru trung binh cung bang, cung tuan MMWR qua cac nam nay
 
-# Vung HHS (co dinh theo HHS); 50 bang + DC
-HHS_REGION = {
-    1: ["ct", "me", "ma", "nh", "ri", "vt"],
-    2: ["nj", "ny"],
-    3: ["de", "dc", "md", "pa", "va", "wv"],
-    4: ["al", "fl", "ga", "ky", "ms", "nc", "sc", "tn"],
-    5: ["il", "in", "mi", "mn", "oh", "wi"],
-    6: ["ar", "la", "nm", "ok", "tx"],
-    7: ["ia", "ks", "mo", "ne"],
-    8: ["co", "mt", "nd", "sd", "ut", "wy"],
-    9: ["az", "ca", "hi", "nv"],
-    10: ["ak", "id", "or", "wa"],
-}
-STATE_TO_HHS = {s: r for r, states in HHS_REGION.items() for s in states}
-STATES = sorted(STATE_TO_HHS)          # 51 ma: 50 bang + DC
-NON_CONTIGUOUS = {"ak", "hi"}
 
 
 # ============================== Ham cong khai ==============================
@@ -97,29 +81,6 @@ def clear_cache():
     """Xoa bo nho dem (goi sau khi tai lai du lieu trong cung phien notebook)."""
     for f in (_flu_week, _dim_state, _dim_time, _season_summary, _population):
         f.cache_clear()
-
-
-# ============================== Tuan MMWR ==============================
-
-def mmwr_week1_end(year):
-    """Ngay thu Bay ket thuc tuan MMWR 1 cua nam: tuan CN-T7 chua ngay 4/1."""
-    jan4 = dt.date(year, 1, 4)
-    return jan4 + dt.timedelta(days=(5 - jan4.weekday()) % 7)
-
-
-def season_of(week):
-    """Series ngay thu Bay -> (season 'YYYY-YY', season_week), mua bat dau tu tuan MMWR 40."""
-    week = pd.to_datetime(week)
-    years = week.dt.year
-    out_season = pd.Series(index=week.index, dtype="object")
-    out_sw = pd.Series(index=week.index, dtype="Int64")
-    for y in range(int(years.min()) - 1, int(years.max()) + 1):
-        start = pd.Timestamp(mmwr_week1_end(y) + dt.timedelta(weeks=39))       # thu Bay cua tuan 40 nam y
-        end = pd.Timestamp(mmwr_week1_end(y + 1) + dt.timedelta(weeks=39))    # tuan 40 mua sau
-        m = (week >= start) & (week < end)
-        out_season[m] = f"{y}-{(y + 1) % 100:02d}"
-        out_sw[m] = ((week[m] - start).dt.days // 7 + 1).astype("int64")
-    return out_season.astype("string"), out_sw
 
 
 # ============================== Doc file ==============================
