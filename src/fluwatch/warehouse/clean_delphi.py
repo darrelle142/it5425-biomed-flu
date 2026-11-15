@@ -35,6 +35,8 @@ DELPHI_TABLES = {
         ("flusurv", "rate_overall__state", "flusurv_rate", "ca nhap vien / 100.000 dan / tuan (FluSurv-NET)"),
     ],
 }
+# ty le -> mau so: mau so = 0 nghia la khong co bao cao, ty le phai de trong (nguon ghi 0)
+ZERO_DENOM = {"ilinet": ("ili_pct", "num_patients"), "lab_clinical": ("lab_pct_pos", "lab_specimens")}
 COUNT_COLS = {"num_ili", "num_patients", "num_providers", "hosp_flu", "hosp_reporting", "lab_specimens"}
 
 
@@ -71,6 +73,12 @@ def clean_delphi(paths, table, clog):
     for _s, _f, col, _u in DELPHI_TABLES[table]:
         if col in COUNT_COLS:
             out[col] = out[col].round().astype("Int64")
+    if table in ZERO_DENOM:
+        rate, denom = ZERO_DENOM[table]
+        z = (out[denom] == 0).fillna(False) & out[rate].notna()
+        if z.any():
+            clog.step(table, f"{denom} = 0 -> {rate} de trong (khong co bao cao, khong phai 0%)", z.sum())
+            out.loc[z, rate] = pd.NA
     out = add_time_keys(out)
     cols = ["state", "week", "epiweek", "season", "season_week"] + [c for _, _, c, _ in DELPHI_TABLES[table]] + ["report_date"]
     return out[cols].sort_values(["state", "week"]).reset_index(drop=True)

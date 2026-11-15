@@ -236,7 +236,10 @@ def _finalize(df, cols, sort):
     for c in cols:
         if c not in df:
             df[c] = pd.NA
-    extra = [c for c in df.columns if c not in cols and c in ("pm25_source",)]
+    # business/: giu moi cot them (bien tre, wow_pct, missing_*...) sau cac cot hop dong;
+    # samples/: chi giu pm25_source (cac cot con lai la cot tam khi ghep)
+    keep_all = source() == "business"
+    extra = [c for c in df.columns if c not in cols and (keep_all or c in ("pm25_source",))]
     df = df[cols + extra].copy()
     for c in ("state", "season", "state_name", "source", "pm25_source"):
         if c in df:

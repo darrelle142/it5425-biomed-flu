@@ -1,7 +1,8 @@
 """clean/: cac file CDC tai qua GitHub Actions (data.cdc.gov chan may o Viet Nam).
 
-- wval: muc virus cum A trong nuoc thai (WVAL, bo atcp-73re), theo tram -> bang x tuan,
-  trung binh co trong so dan so phuc vu cua tram. Gop moi lan tai (moi lan CDC chi tra mot khoang thoi gian),
+- wval: muc virus cum A trong nuoc thai (WVAL, bo atcp-73re), tram > 1000 bo, 100-1000 chan tran 100,
+  theo tram -> bang x tuan bang TRUNG VI
+  co trong so dan so phuc vu cua tram (wval_mean: trung binh, de doi chieu). Gop moi lan tai (moi lan CDC chi tra mot khoang thoi gian),
   trung (tram, tuan) thi giu ban tai moi nhat.
 - vaccine: do phu vaccine cum >= 6 thang tuoi theo bang x mua (bo vh55-3he6), lay THANG CUOI CO SO cua mua.
 """
@@ -13,7 +14,10 @@ import pandas as pd
 from .common import add_time_keys, dedupe, keep_states, negative_to_na, state_names
 
 WVAL_GLOB = "CDC_Wastewater_Viral_Activity_Level_for_SARS-CoV-2,_Influenza_A_and_RSV_*.csv"
-VAX_GLOB = "Influenza_Vaccination_Coverage_for_All_Ages_(6+_Months)_*.csv"
+WVAL_EXTREME = 1000   # WVAL tram > nguong nay coi la sai mien, bo (p99 ~ 53; muc Very High cua CDC bat dau tu 15,6)
+WVAL_CAP = 100        # 100 < WVAL tram <= 1000: dung huong (dot tang that, vd. OK 12/2022, MN 1/2026) nhung do lon
+                      # phi ly (p99,5 ~ 100, chu yeu nguon State_Territory cua OK, VA) -> chan tran o 100, khong bo
+VAX_GLOB ="Influenza_Vaccination_Coverage_for_All_Ages_(6+_Months)_*.csv"
 
 
 def _files(paths, source, pattern):
@@ -56,14 +60,40 @@ def clean_wval(paths, clog):
     if nopop.any():
         clog.step(name, "tram thieu dan so phuc vu -> dung trung vi lam trong so", nopop.sum())
     ww["w"] = ww["pop"].where(~nopop, ww.loc[~nopop, "pop"].median())
+    # Sai mien: WVAL tram > WVAL_EXTREME (CDC co tram bao toi 6,9e8, VA thang 1-2/2025) -> bo, ghi log, dem lai
+    extreme = ww.wval > WVAL_EXTREME
+    n_ext = ww[extreme].groupby(["state", "week"]).Site.nunique().rename("wval_sites_extreme")
+    if extreme.any():
+        clog.step(name, f"WVAL tram > {WVAL_EXTREME} (sai mien) -> bo", extreme.sum(),
+                  ", ".join(f"{s}:{n}" for s, n in ww.loc[extreme, "state"].value_counts().head(8).items()))
+    ww = ww[~extreme].copy()
+    # Chan tran: khong dung quy tac "nhay vot so voi tuan lan can" vi dot tang that cua cum cung gap 10 lan trong
+    # 2-3 tuan (thu ngay 16/11: quy tac do keo MN 2026-01-10 tu 154 xuong 1,0).
+    capped = ww.wval > WVAL_CAP
+    n_cap = ww[capped].groupby(["state", "week"]).Site.nunique().rename("wval_sites_capped")
+    if capped.any():
+        clog.step(name, f"WVAL tram trong ({WVAL_CAP}, {WVAL_EXTREME}] -> chan tran {WVAL_CAP}", capped.sum(),
+                  ", ".join(f"{s}:{n}" for s, n in ww.loc[capped, "state"].value_counts().head(8).items()))
+        ww.loc[capped, "wval"] = float(WVAL_CAP)
+    # Gop tram -> bang bang TRUNG VI co trong so dan so phuc vu (ke hoach v2 muc 6: nuoc thai lay trung vi,
+    # khong lay trung binh); wval_mean giu de doi chieu.
+    ww = ww.sort_values(["state", "week", "wval"])
+    g = ww.groupby(["state", "week"], sort=False)
+    cum = g.w.cumsum()
+    half = g.w.transform("sum") / 2
+    med = ww[cum >= half].groupby(["state", "week"]).wval.first().rename("wval")
     ww["wx"] = ww.wval * ww.w
-    g = ww.groupby(["state", "week"])
-    sw = pd.DataFrame({"wval": g.wx.sum() / g.w.sum(), "wval_sites": g.Site.nunique(),
-                       "wval_pop_served": g.w.sum()}).reset_index()
+    sw = pd.DataFrame({"wval": med, "wval_mean": g.wx.sum() / g.w.sum(), "wval_sites": g.Site.nunique(),
+                       "wval_pop_served": g.w.sum()})
+    sw = sw.join(n_ext, how="outer").join(n_cap, how="left").reset_index()
+    sw["wval_sites_extreme"] = sw["wval_sites_extreme"].fillna(0).astype("Int64")
+    sw["wval_sites_capped"] = sw["wval_sites_capped"].fillna(0).astype("Int64")
+    sw["wval_sites"] = sw["wval_sites"].fillna(0)
     sw["wval_sites"] = sw["wval_sites"].astype("Int64")
     sw["wval_pop_served"] = sw["wval_pop_served"].round().astype("Int64")
     sw = add_time_keys(sw)
-    cols = ["state", "week", "epiweek", "season", "season_week", "wval", "wval_sites", "wval_pop_served"]
+    cols = ["state", "week", "epiweek", "season", "season_week", "wval", "wval_mean", "wval_sites",
+            "wval_sites_extreme", "wval_sites_capped", "wval_pop_served"]
     return sw[cols].sort_values(["state", "week"]).reset_index(drop=True)
 
 

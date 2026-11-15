@@ -72,15 +72,16 @@ EXAMPLES = [
         FROM v_flu_week WHERE season = '2024-25' AND in_flu_season
         GROUP BY hhs_region ORDER BY hhs_region"""),
     ("Drill-down", "Toan quoc -> vung 4 -> tung bang vung 4: dinh nhap vien mua 2024-25",
-     """SELECT 'toan quoc' AS cap, NULL AS hhs_region, NULL AS state, round(max(rate_flu), 2) AS rate_peak
-        FROM v_nation_week WHERE season = '2024-25'
-        UNION ALL
-        SELECT 'vung', hhs_region, NULL, round(max(rate_flu), 2) FROM v_region_week
-        WHERE season = '2024-25' AND hhs_region = 4 GROUP BY hhs_region
-        UNION ALL
-        SELECT 'bang', hhs_region, state, round(max(rate_flu), 2) FROM v_flu_week
-        WHERE season = '2024-25' AND hhs_region = 4 GROUP BY hhs_region, state
-        ORDER BY cap DESC, rate_peak DESC"""),
+     """SELECT cap, hhs_region, state, rate_peak FROM (
+            SELECT 1 AS lvl, 'toan quoc' AS cap, NULL AS hhs_region, NULL AS state, round(max(rate_flu), 2) AS rate_peak
+            FROM v_nation_week WHERE season = '2024-25'
+            UNION ALL
+            SELECT 2, 'vung', hhs_region, NULL, round(max(rate_flu), 2) FROM v_region_week
+            WHERE season = '2024-25' AND hhs_region = 4 GROUP BY hhs_region
+            UNION ALL
+            SELECT 3, 'bang', hhs_region, state, round(max(rate_flu), 2) FROM v_flu_week
+            WHERE season = '2024-25' AND hhs_region = 4 GROUP BY hhs_region, state)
+        ORDER BY lvl, rate_peak DESC"""),
     ("Drill-down", "Bang -> tung tuan: Georgia quanh dinh mua 2024-25",
      """SELECT week, season_week, round(rate_flu, 2) AS rate_flu, cdc_level_name, round(ili_pct, 2) AS ili_pct,
                round(wow_pct, 1) AS wow_pct
@@ -103,8 +104,8 @@ EXAMPLES = [
         ON season USING first(peak) GROUP BY hhs_region ORDER BY hhs_region"""),
     ("Pivot", "Xoay heatmap bang x tuan thanh mua x tuan trong mua: ILI toan quoc (tuan trong mua 1, 5, ..., 33)",
      """PIVOT (SELECT season, season_week, round(ili_pct, 2) AS ili FROM v_nation_week
-               WHERE season BETWEEN '2016-17' AND '2025-26' AND season_week IN (1, 5, 9, 13, 17, 21, 25, 29, 33))
-        ON season_week USING first(ili) GROUP BY season ORDER BY season"""),
+               WHERE season BETWEEN '2016-17' AND '2025-26')
+        ON season_week IN (1, 5, 9, 13, 17, 21, 25, 29, 33) USING first(ili) GROUP BY season ORDER BY season"""),
 ]
 
 

@@ -20,6 +20,9 @@ Cách tải dữ liệu và chạy code: [README của repo](../README.md).
 | [ke_hoach_v2.docx](ke_hoach_v2.docx) | Cần định nghĩa và phương pháp gốc (mức nền, tuần khởi phát, quy tắc chất lượng, từ điển dữ liệu, thiết kế dashboard). Các điểm đã thay đổi: [ke_hoach.md](ke_hoach.md) mục 10 |
 | [ke_hoach_tu_dong_crawl_cdc.md](ke_hoach_tu_dong_crawl_cdc.md) | Tài liệu kỹ thuật về thu thập dữ liệu: nguồn nào lấy ở đâu, cần VPN không (mục 1); cách tải tự động nguồn CDC bị chặn (mục 2); dữ liệu đủ cho RQ nào (mục 8); **dựng lại dữ liệu khi lỗi** (mục 9) |
 | [bao_toan_du_lieu.md](bao_toan_du_lieu.md) | Cơ chế bảo toàn dữ liệu thô (kiểm tra toàn vẹn, tag phiên bản, sao lưu) và **quy trình khôi phục khi kho hỏng** |
+| [tu_dien_du_lieu.md](tu_dien_du_lieu.md) | Ý nghĩa, đơn vị, kiểu, % thiếu và **lineage** (nguồn → phép biến đổi) của từng cột trong `data/business/` (sinh tự động) |
+| [tinh_hinh_tv2.md](tinh_hinh_tv2.md) | Báo cáo tình hình kho dữ liệu 16/11: đã xong gì, **dữ liệu đã đổi gì**, việc cần từng người |
+| [quan_tri_du_lieu.md](quan_tri_du_lieu.md) | Ai phụ trách nguồn nào; các tầng `raw/` → `clean/` → `business/`; **quy tắc cập nhật 4 tuần gần nhất** (số sơ bộ); quy trình kiểm tra chất lượng |
 | [tv4/ap_dung_kien_thuc_mon_hoc.md](tv4/ap_dung_kien_thuc_mon_hoc.md) | TV4: kiến thức bài giảng áp dụng cho từng việc |
 | [../data/README.md](../data/README.md) | Thẻ dữ liệu (cũng là trang Hugging Face): mỗi thư mục `raw/`, mỗi bảng `samples/` chứa gì |
 | [../notebooks/README.md](../notebooks/README.md) | Quy ước đặt tên và đọc dữ liệu trong notebook |
