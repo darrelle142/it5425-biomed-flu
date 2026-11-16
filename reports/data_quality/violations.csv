@@ -1,0 +1,5 @@
+table,state,week,season,column,value,detail,rule,level,severity
+fact_flu_week,mn,2020-11-14,2020-21,rate_flu,0.52,"rate_flu = 0.52, tinh tu hosp_flu = 0.57",R09,2,canh_bao
+fact_flu_week,mn,2021-03-06,2020-21,rate_flu,0.31,"rate_flu = 0.31, tinh tu hosp_flu = 0.34",R09,2,canh_bao
+fact_flu_week,mn,2020-11-14,2020-21,hosp_flu,30.0,"rate_flu = 0.52, tinh tu hosp_flu = 0.57",R09,2,canh_bao
+fact_flu_week,mn,2021-03-06,2020-21,hosp_flu,18.0,"rate_flu = 0.31, tinh tu hosp_flu = 0.34",R09,2,canh_bao

@@ -1,0 +1,510 @@
+error_id,error_type,state,week,column,rules,caught,caught_internal
+1,missing_random,ca,2022-09-03,rate_flu,"M03, R05, R06, R07",True,True
+2,missing_random,co,2022-02-26,num_ili,M03,True,False
+3,missing_random,fl,2022-05-28,ili_pct,"M03, R05, R06, R07",True,True
+4,missing_random,ny,2021-04-10,abs_humidity,"M03, R05",True,True
+5,missing_random,ne,2021-12-11,rate_flu,"M03, R05, R06, R07",True,True
+6,missing_random,pa,2020-11-21,lab_pct_pos,"M03, R05, R06",True,True
+7,missing_random,wi,2014-08-23,abs_humidity,"M03, R05",True,True
+8,missing_random,ut,2025-04-19,hosp_flu,"M03, R06",True,True
+9,missing_random,nj,2024-06-01,lab_pct_pos,"M03, R05, R06",True,True
+10,missing_random,va,2013-04-13,temp_mean,"M03, R06",True,True
+11,missing_random,nm,2024-12-28,lab_pct_pos,"M03, R05, R06",True,True
+12,missing_random,dc,2014-12-13,num_ili,M03,True,False
+13,missing_random,nh,2013-05-18,abs_humidity,"M03, R05",True,True
+14,missing_random,co,2024-03-02,num_patients,M03,True,False
+15,missing_random,ga,2020-10-17,num_patients,M03,True,False
+16,missing_random,ca,2019-07-20,num_patients,M03,True,False
+17,missing_random,va,2021-04-24,abs_humidity,"M03, R05",True,True
+18,missing_random,wy,2022-11-26,ili_pct,"M03, R05, R06, R07",True,True
+19,missing_random,al,2020-10-31,temp_mean,"M03, R06",True,True
+20,missing_random,ia,2026-03-28,num_patients,M03,True,False
+21,missing_random,fl,2023-10-28,lab_pct_pos,"M03, R05, R06",True,True
+22,missing_random,or,2022-07-30,abs_humidity,"M03, R05",True,True
+23,missing_random,nm,2020-10-03,lab_pct_pos,"M03, R05, R06",True,True
+24,missing_random,co,2015-02-28,num_ili,M03,True,False
+25,missing_random,ut,2011-09-03,num_patients,M03,True,False
+26,missing_random,wa,2019-02-16,temp_mean,"M03, R06",True,True
+27,missing_random,nm,2023-07-29,pm25_mean,"M03, R05, R06",True,True
+28,missing_random,al,2016-09-17,num_ili,M03,True,False
+29,missing_random,il,2022-06-18,lab_pct_pos,"M03, R05, R06",True,True
+30,missing_random,or,2025-10-25,temp_mean,"M03, R06",True,True
+31,missing_random,ky,2012-01-07,num_patients,M03,True,False
+32,missing_random,sc,2021-02-27,rate_flu,"M03, R05, R06, R07",True,True
+33,missing_random,pa,2014-05-03,pm25_mean,"M03, R05, R06",True,True
+34,missing_random,wi,2012-08-11,num_ili,M03,True,False
+35,missing_random,id,2022-11-05,abs_humidity,"M03, R05",True,True
+36,missing_random,in,2013-05-18,num_patients,M03,True,False
+37,missing_random,ks,2022-02-26,num_ili,M03,True,False
+38,missing_random,dc,2011-05-28,ili_pct,"M03, R05, R06, R07",True,True
+39,missing_random,ak,2013-02-09,pm25_mean,"M03, R05, R06",True,True
+40,missing_random,pa,2019-10-19,lab_pct_pos,"M03, R05, R06",True,True
+41,missing_random,ri,2010-10-09,num_patients,M03,True,False
+42,missing_random,ny,2012-05-19,num_ili,M03,True,False
+43,missing_random,ct,2021-02-27,hosp_flu,"M03, R06",True,True
+44,missing_random,dc,2013-01-19,ili_pct,"M03, R05, R06, R07",True,True
+45,missing_random,ca,2013-08-24,num_patients,M03,True,False
+46,missing_random,wi,2012-05-12,pm25_mean,"M03, R05, R06",True,True
+47,missing_random,md,2024-08-24,rate_flu,"M03, R05, R06, R07",True,True
+48,missing_random,wy,2025-06-21,num_ili,M03,True,False
+49,missing_random,ca,2026-07-04,temp_mean,"M03, R06",True,True
+50,missing_random,oh,2025-11-29,ili_pct,"M03, R05, R06, R07",True,True
+51,missing_random,ok,2017-11-25,lab_pct_pos,"M03, R05, R06",True,True
+52,missing_random,az,2012-04-28,abs_humidity,"M03, R05",True,True
+53,missing_random,in,2024-02-10,rate_flu,"M03, R05, R06, R07",True,True
+54,missing_random,wa,2026-09-19,num_patients,M03,True,False
+55,missing_random,oh,2018-05-12,temp_mean,"M03, R06",True,True
+56,missing_random,az,2017-12-30,lab_pct_pos,"M03, R05, R06",True,True
+57,missing_random,co,2019-08-17,num_ili,M03,True,False
+58,missing_random,ak,2023-07-08,wval,"M03, R05, R06",True,True
+59,missing_random,md,2026-02-14,ili_pct,"M03, R05, R06, R07",True,True
+60,missing_random,id,2021-05-22,num_patients,M03,True,False
+61,missing_random,ca,2026-02-14,pm25_mean,"M03, R05, R06",True,True
+62,missing_random,wi,2012-10-13,ili_pct,"M03, R05, R06, R07",True,True
+63,missing_random,ky,2022-04-16,lab_pct_pos,"M03, R05, R06",True,True
+64,missing_random,id,2018-08-11,temp_mean,"M03, R06",True,True
+65,missing_random,ia,2026-07-25,rate_flu,"M03, R05, R06, R07",True,True
+66,missing_random,az,2022-07-02,num_patients,M03,True,False
+67,missing_random,ia,2017-03-11,num_ili,M03,True,False
+68,missing_random,ca,2022-10-22,num_ili,M03,True,False
+69,missing_random,wv,2020-04-25,temp_mean,"M03, R06",True,True
+70,missing_random,ut,2019-03-23,num_patients,M03,True,False
+71,missing_random,wv,2026-06-13,rate_flu,"M03, R05, R06, R07",True,True
+72,missing_random,nj,2021-03-27,hosp_flu,"M03, R06",True,True
+73,missing_random,oh,2020-10-17,temp_mean,"M03, R06",True,True
+74,missing_random,vt,2020-11-07,abs_humidity,"M03, R05",True,True
+75,missing_random,in,2021-10-16,ili_pct,"M03, R05, R06, R07",True,True
+76,missing_random,mn,2017-09-16,num_ili,M03,True,False
+77,missing_random,ne,2022-01-08,num_ili,M03,True,False
+78,missing_random,id,2016-04-09,num_patients,M03,True,False
+79,missing_random,fl,2017-01-07,pm25_mean,"M03, R05, R06",True,True
+80,missing_random,la,2026-07-04,num_ili,M03,True,False
+81,missing_random,nj,2012-03-17,temp_mean,"M03, R06",True,True
+82,missing_random,ca,2017-07-29,lab_pct_pos,"M03, R05, R06",True,True
+83,missing_random,ut,2013-11-09,pm25_mean,"M03, R05, R06",True,True
+84,missing_random,de,2022-02-19,num_patients,M03,True,False
+85,missing_random,ga,2021-02-20,ili_pct,"M03, R05, R06, R07",True,True
+86,missing_random,va,2016-06-18,ili_pct,"M03, R05, R06, R07",True,True
+87,missing_random,tn,2025-01-25,abs_humidity,"M03, R05",True,True
+88,missing_random,ny,2018-06-30,temp_mean,"M03, R06",True,True
+89,missing_random,ms,2012-07-14,num_ili,M03,True,False
+90,missing_random,la,2016-10-01,temp_mean,"M03, R06",True,True
+91,missing_random,or,2010-03-13,abs_humidity,"M03, R05",True,True
+92,missing_random,il,2018-10-06,num_ili,M03,True,False
+93,missing_random,tn,2016-01-23,abs_humidity,"M03, R05",True,True
+94,missing_random,al,2014-11-22,num_patients,M03,True,False
+95,missing_random,nj,2019-05-04,abs_humidity,"M03, R05",True,True
+96,missing_random,ia,2012-12-08,num_patients,M03,True,False
+97,missing_random,vt,2011-05-28,num_patients,M03,True,False
+98,missing_random,nj,2024-12-14,temp_mean,"M03, R06",True,True
+99,missing_random,ri,2013-11-30,abs_humidity,"M03, R05",True,True
+100,missing_random,ri,2024-02-03,ed_pct_flu,"M03, R05, R06",True,True
+101,missing_random,ma,2026-05-16,pm25_mean,"M03, R05, R06",True,True
+102,missing_random,nm,2018-07-28,lab_pct_pos,"M03, R05, R06",True,True
+103,missing_random,wv,2025-08-16,num_ili,M03,True,False
+104,missing_random,oh,2015-09-26,temp_mean,"M03, R06",True,True
+105,missing_random,sd,2024-10-19,num_patients,M03,True,False
+106,missing_random,ca,2017-07-01,ili_pct,"M03, R05, R06, R07",True,True
+107,missing_random,ga,2017-06-10,lab_pct_pos,"M03, R05, R06",True,True
+108,missing_random,ga,2021-05-01,num_ili,M03,True,False
+109,missing_random,az,2025-03-08,num_ili,M03,True,False
+110,missing_random,ma,2023-08-12,wval,"M03, R05, R06",True,True
+111,missing_random,az,2013-10-12,pm25_mean,"M03, R05, R06",True,True
+112,missing_random,az,2026-03-14,lab_pct_pos,"M03, R05, R06",True,True
+113,missing_random,sc,2015-09-26,num_ili,M03,True,False
+114,missing_random,ut,2017-06-10,ili_pct,"M03, R05, R06, R07",True,True
+115,missing_random,wy,2025-02-01,rate_flu,"M03, R05, R06, R07",True,True
+116,missing_random,md,2023-04-01,rate_flu,"M03, R05, R06, R07",True,True
+117,missing_random,ri,2025-12-13,rate_flu,"M03, R05, R06, R07",True,True
+118,missing_random,tx,2025-05-03,lab_pct_pos,"M03, R05, R06",True,True
+119,missing_random,oh,2013-05-11,num_ili,M03,True,False
+120,missing_random,ky,2018-08-18,pm25_mean,"M03, R05, R06",True,True
+121,missing_random,sc,2023-04-01,temp_mean,"M03, R06",True,True
+122,missing_random,ma,2010-11-13,abs_humidity,"M03, R05",True,True
+123,missing_random,mt,2026-04-11,rate_flu,"M03, R05, R06, R07",True,True
+124,missing_random,de,2019-07-13,abs_humidity,"M03, R05",True,True
+125,missing_random,co,2021-10-16,hosp_flu,"M03, R06",True,True
+126,missing_random,ri,2013-03-02,num_ili,M03,True,False
+127,missing_random,al,2015-08-08,ili_pct,"M03, R05, R06, R07",True,True
+128,missing_random,va,2019-11-23,pm25_mean,"M03, R05, R06",True,True
+129,missing_random,tn,2014-07-12,abs_humidity,"M03, R05",True,True
+130,missing_random,in,2025-07-05,num_patients,M03,True,False
+131,missing_random,nm,2016-07-02,ili_pct,"M03, R05, R06, R07",True,True
+132,missing_random,sc,2023-02-04,ed_pct_flu,"M03, R05, R06",True,True
+133,missing_random,nj,2023-05-13,temp_mean,"M03, R06",True,True
+134,missing_random,ok,2013-07-27,pm25_mean,"M03, R05, R06",True,True
+135,missing_random,va,2014-01-11,ili_pct,"M03, R05, R06, R07",True,True
+136,missing_random,mi,2025-09-06,ili_pct,"M03, R05, R06, R07",True,True
+137,missing_random,ca,2025-12-27,ed_pct_flu,"M03, R05, R06",True,True
+138,missing_random,ia,2024-12-21,wval,"M03, R05, R06",True,True
+139,missing_random,ok,2017-04-29,abs_humidity,"M03, R05",True,True
+140,missing_random,nc,2022-10-08,pm25_mean,"M03, R05, R06",True,True
+141,missing_random,ms,2026-07-04,rate_flu,"M03, R05, R06, R07",True,True
+142,missing_random,ct,2025-11-01,ed_pct_flu,"M03, R05, R06",True,True
+143,missing_random,ia,2023-09-02,num_patients,M03,True,False
+144,missing_random,tn,2019-02-23,abs_humidity,"M03, R05",True,True
+145,missing_random,il,2015-07-04,num_ili,M03,True,False
+146,missing_random,dc,2019-01-05,temp_mean,"M03, R06",True,True
+147,missing_random,pa,2015-11-28,ili_pct,"M03, R05, R06, R07",True,True
+148,missing_random,wv,2026-08-29,wval,"M03, R05, R06",True,True
+149,missing_random,co,2022-10-22,lab_pct_pos,"M03, R05, R06",True,True
+150,missing_random,tn,2019-07-27,ili_pct,"M03, R05, R06, R07",True,True
+151,missing_random,de,2010-07-31,pm25_mean,"M03, R05, R06",True,True
+152,missing_random,wv,2015-03-07,num_patients,M03,True,False
+153,missing_random,wy,2026-01-03,hosp_flu,"M03, R06",True,True
+154,missing_random,ky,2017-10-07,num_patients,M03,True,False
+155,missing_random,md,2019-08-17,abs_humidity,"M03, R05",True,True
+156,missing_random,or,2016-12-10,pm25_mean,"M03, R05, R06",True,True
+157,missing_random,ri,2017-09-30,pm25_mean,"M03, R05, R06",True,True
+158,missing_random,md,2014-06-21,ili_pct,"M03, R05, R06, R07",True,True
+159,missing_random,vt,2020-12-05,pm25_mean,"M03, R05, R06",True,True
+160,missing_random,wa,2020-10-03,lab_pct_pos,"M03, R05, R06",True,True
+161,missing_random,nj,2014-10-18,num_patients,M03,True,False
+162,missing_random,ne,2017-12-23,num_ili,M03,True,False
+163,missing_random,vt,2016-07-23,abs_humidity,"M03, R05",True,True
+164,missing_random,ne,2026-07-11,temp_mean,"M03, R06",True,True
+165,missing_random,mo,2024-03-23,pm25_mean,"M03, R05, R06",True,True
+166,missing_random,mn,2015-10-31,ili_pct,"M03, R05, R06, R07",True,True
+167,missing_random,mn,2011-12-03,ili_pct,"M03, R05, R06, R07",True,True
+168,missing_random,de,2025-09-06,ili_pct,"M03, R05, R06, R07",True,True
+169,missing_random,in,2017-03-18,lab_pct_pos,"M03, R05, R06",True,True
+170,missing_random,id,2021-03-27,abs_humidity,"M03, R05",True,True
+171,missing_random,ne,2019-10-19,num_ili,M03,True,False
+172,missing_random,ia,2014-07-19,pm25_mean,"M03, R05, R06",True,True
+173,missing_random,co,2016-01-02,pm25_mean,"M03, R05, R06",True,True
+174,missing_random,ia,2023-11-04,num_patients,M03,True,False
+175,missing_random,nh,2011-07-02,ili_pct,"M03, R05, R06, R07",True,True
+176,missing_random,me,2011-05-28,abs_humidity,"M03, R05",True,True
+177,missing_random,nc,2025-11-15,ili_pct,"M03, R05, R06, R07",True,True
+178,missing_random,mt,2025-11-08,ili_pct,"M03, R05, R06, R07",True,True
+179,missing_random,ms,2018-02-24,pm25_mean,"M03, R05, R06",True,True
+180,missing_random,dc,2017-05-27,temp_mean,"M03, R06",True,True
+181,missing_random,ca,2018-02-17,temp_mean,"M03, R06",True,True
+182,missing_random,ca,2025-05-24,rate_flu,"M03, R05, R06, R07",True,True
+183,missing_random,ca,2024-09-14,pm25_mean,"M03, R05, R06",True,True
+184,missing_random,ut,2021-01-09,num_ili,M03,True,False
+185,missing_random,sc,2024-01-27,rate_flu,"M03, R05, R06, R07",True,True
+186,missing_random,ny,2021-09-11,abs_humidity,"M03, R05",True,True
+187,missing_random,nh,2024-08-24,ed_pct_flu,"M03, R05, R06",True,True
+188,missing_random,vt,2024-06-01,rate_flu,"M03, R05, R06, R07",True,True
+189,missing_random,ky,2017-11-18,lab_pct_pos,"M03, R05, R06",True,True
+190,missing_random,hi,2023-08-05,pm25_mean,"M03, R05, R06",True,True
+191,missing_random,wi,2017-09-30,lab_pct_pos,"M03, R05, R06",True,True
+192,missing_random,vt,2023-07-29,num_patients,M03,True,False
+193,missing_random,wi,2026-07-25,pm25_mean,"M03, R05, R06",True,True
+194,missing_random,nh,2023-07-01,hosp_flu,"M03, R06",True,True
+195,missing_random,ga,2012-12-22,num_ili,M03,True,False
+196,missing_random,mn,2014-07-19,num_patients,M03,True,False
+197,missing_random,ia,2018-05-12,num_patients,M03,True,False
+198,missing_random,in,2015-01-17,pm25_mean,"M03, R05, R06",True,True
+199,missing_random,nm,2025-06-28,ili_pct,"M03, R05, R06, R07",True,True
+200,missing_random,nm,2018-07-14,lab_pct_pos,"M03, R05, R06",True,True
+201,missing_random,mi,2016-12-10,abs_humidity,"M03, R05",True,True
+202,missing_random,vt,2010-02-27,temp_mean,"M03, R06",True,True
+203,missing_random,ok,2011-05-07,temp_mean,"M03, R06",True,True
+204,missing_random,wa,2024-02-24,temp_mean,"M03, R06",True,True
+205,missing_random,sd,2025-09-27,hosp_flu,"M03, R06",True,True
+206,missing_random,ma,2023-03-25,num_patients,M03,True,False
+207,missing_random,ca,2019-12-07,pm25_mean,"M03, R05, R06",True,True
+208,missing_random,nc,2021-11-27,hosp_flu,"M03, R06",True,True
+209,missing_random,ct,2019-08-31,abs_humidity,"M03, R05",True,True
+210,missing_random,nd,2022-08-20,rate_flu,"M03, R05, R06, R07",True,True
+211,missing_random,oh,2022-05-07,hosp_flu,"M03, R06",True,True
+212,missing_random,wy,2016-01-16,num_patients,M03,True,False
+213,missing_random,ne,2021-12-04,lab_pct_pos,"M03, R05, R06",True,True
+214,missing_random,wa,2018-12-08,lab_pct_pos,"M03, R05, R06",True,True
+215,missing_random,de,2021-08-14,rate_flu,"M03, R05, R06, R07",True,True
+216,missing_random,vt,2018-10-13,temp_mean,"M03, R06",True,True
+217,missing_random,az,2026-07-11,rate_flu,"M03, R05, R06, R07",True,True
+218,missing_random,nd,2020-02-08,num_patients,M03,True,False
+219,missing_random,il,2020-04-04,lab_pct_pos,"M03, R05, R06",True,True
+220,missing_random,ak,2018-10-13,num_patients,M03,True,False
+221,missing_random,wi,2010-11-27,num_patients,M03,True,False
+222,missing_random,oh,2020-07-04,abs_humidity,"M03, R05",True,True
+223,missing_random,mn,2020-12-26,ili_pct,"M03, R05, R06, R07",True,True
+224,missing_random,nm,2025-04-12,ili_pct,"M03, R05, R06, R07",True,True
+225,missing_random,wy,2017-08-26,num_patients,M03,True,False
+226,missing_random,ar,2025-03-15,abs_humidity,"M03, R05",True,True
+227,missing_random,ne,2012-03-10,num_patients,M03,True,False
+228,missing_random,nc,2025-11-29,num_ili,M03,True,False
+229,missing_random,nj,2024-09-07,lab_pct_pos,"M03, R05, R06",True,True
+230,missing_random,ar,2018-01-06,temp_mean,"M03, R06",True,True
+231,missing_random,in,2011-02-26,ili_pct,"M03, R05, R06, R07",True,True
+232,missing_random,id,2023-06-10,ed_pct_flu,"M03, R05, R06",True,True
+233,missing_random,ri,2025-03-22,num_patients,M03,True,False
+234,missing_random,ks,2022-05-07,num_ili,M03,True,False
+235,missing_random,hi,2011-01-01,pm25_mean,"M03, R05, R06",True,True
+236,missing_random,id,2025-08-16,ed_pct_flu,"M03, R05, R06",True,True
+237,missing_random,va,2022-12-03,pm25_mean,"M03, R05, R06",True,True
+238,missing_random,az,2014-08-02,num_ili,M03,True,False
+239,missing_random,il,2020-12-26,abs_humidity,"M03, R05",True,True
+240,missing_random,oh,2019-07-13,abs_humidity,"M03, R05",True,True
+241,missing_random,wy,2025-01-25,abs_humidity,"M03, R05",True,True
+242,missing_random,wy,2010-11-06,temp_mean,"M03, R06",True,True
+243,missing_random,nj,2015-01-17,abs_humidity,"M03, R05",True,True
+244,missing_random,ny,2023-08-12,ili_pct,"M03, R05, R06, R07",True,True
+245,missing_random,wi,2026-02-14,abs_humidity,"M03, R05",True,True
+246,missing_random,fl,2019-10-26,pm25_mean,"M03, R05, R06",True,True
+247,missing_random,wy,2022-03-05,pm25_mean,"M03, R05, R06",True,True
+248,missing_random,mi,2022-07-16,temp_mean,"M03, R06",True,True
+249,missing_random,sc,2021-07-17,abs_humidity,"M03, R05",True,True
+250,missing_random,nm,2020-09-12,num_patients,M03,True,False
+251,missing_random,hi,2011-09-10,abs_humidity,"M03, R05",True,True
+252,missing_random,ia,2012-12-15,num_ili,M03,True,False
+253,missing_random,oh,2023-08-19,lab_pct_pos,"M03, R05, R06",True,True
+254,missing_random,ga,2025-07-05,pm25_mean,"M03, R05, R06",True,True
+255,missing_random,wa,2022-06-25,hosp_flu,"M03, R06",True,True
+256,missing_random,mt,2018-01-20,abs_humidity,"M03, R05",True,True
+257,missing_random,vt,2011-09-10,num_patients,M03,True,False
+258,missing_random,ca,2026-08-22,abs_humidity,"M03, R05",True,True
+259,missing_random,mt,2015-12-05,pm25_mean,"M03, R05, R06",True,True
+260,missing_random,mt,2014-10-18,temp_mean,"M03, R06",True,True
+261,missing_random,nm,2022-06-25,num_ili,M03,True,False
+262,missing_random,al,2023-04-08,abs_humidity,"M03, R05",True,True
+263,missing_random,la,2026-08-08,ili_pct,"M03, R05, R06, R07",True,True
+264,missing_random,al,2017-08-19,num_patients,M03,True,False
+265,missing_random,oh,2024-01-13,lab_pct_pos,"M03, R05, R06",True,True
+266,missing_random,hi,2020-04-25,temp_mean,"M03, R06",True,True
+267,missing_random,ct,2022-10-22,hosp_flu,"M03, R06",True,True
+268,missing_random,ca,2018-09-22,pm25_mean,"M03, R05, R06",True,True
+269,missing_random,mt,2026-04-04,num_ili,M03,True,False
+270,missing_random,ca,2024-02-03,temp_mean,"M03, R06",True,True
+271,missing_random,co,2025-12-20,wval,"M03, R05, R06",True,True
+272,missing_random,mo,2013-05-11,temp_mean,"M03, R06",True,True
+273,missing_random,vt,2025-01-11,wval,"M03, R05, R06",True,True
+274,missing_random,az,2021-05-15,rate_flu,"M03, R05, R06, R07",True,True
+275,missing_random,ga,2026-09-05,wval,"M03, R05, R06",True,True
+276,missing_random,nj,2014-05-17,num_patients,M03,True,False
+277,missing_random,ks,2020-03-28,lab_pct_pos,"M03, R05, R06",True,True
+278,missing_random,id,2016-12-03,num_patients,M03,True,False
+279,missing_random,sc,2018-07-28,ili_pct,"M03, R05, R06, R07",True,True
+280,missing_random,ut,2021-12-25,ili_pct,"M03, R05, R06, R07",True,True
+281,missing_random,ut,2021-01-02,temp_mean,"M03, R06",True,True
+282,missing_random,tx,2018-06-09,abs_humidity,"M03, R05",True,True
+283,missing_random,mi,2022-02-19,hosp_flu,"M03, R06",True,True
+284,missing_random,mn,2017-04-01,abs_humidity,"M03, R05",True,True
+285,missing_random,fl,2014-03-22,pm25_mean,"M03, R05, R06",True,True
+286,missing_random,la,2017-04-22,num_patients,M03,True,False
+287,missing_random,nh,2011-03-12,ili_pct,"M03, R05, R06, R07",True,True
+288,missing_random,nd,2025-12-27,rate_flu,"M03, R05, R06, R07",True,True
+289,missing_random,al,2018-05-26,pm25_mean,"M03, R05, R06",True,True
+290,missing_random,hi,2025-09-13,hosp_flu,"M03, R06",True,True
+291,missing_random,in,2016-09-17,pm25_mean,"M03, R05, R06",True,True
+292,missing_random,fl,2025-10-25,rate_flu,"M03, R05, R06, R07",True,True
+293,missing_random,ar,2021-08-21,num_ili,M03,True,False
+294,missing_random,wa,2023-04-01,temp_mean,"M03, R06",True,True
+295,missing_random,wv,2013-07-27,ili_pct,"M03, R05, R06, R07",True,True
+296,missing_random,pa,2016-06-04,temp_mean,"M03, R06",True,True
+297,missing_random,ky,2020-04-18,abs_humidity,"M03, R05",True,True
+298,missing_random,or,2024-12-07,ili_pct,"M03, R05, R06, R07",True,True
+299,missing_random,al,2021-02-06,rate_flu,"M03, R05, R06, R07",True,True
+300,missing_random,va,2020-09-26,pm25_mean,"M03, R05, R06",True,True
+301,missing_block,ct,2010-09-25,*,R02,True,True
+302,missing_block,ct,2010-10-02,*,R02,True,True
+303,missing_block,ct,2010-10-09,*,R02,True,True
+304,missing_block,ct,2010-10-16,*,R02,True,True
+305,missing_block,ct,2010-10-23,*,R02,True,True
+306,missing_block,ct,2010-10-30,*,R02,True,True
+307,missing_block,tn,2018-08-11,lab_pct_pos,"M03, R05, R06",True,True
+308,missing_block,tn,2018-08-18,lab_pct_pos,"M03, R05, R06",True,True
+309,missing_block,tn,2018-08-25,lab_pct_pos,"M03, R05, R06",True,True
+310,missing_block,tn,2018-09-01,lab_pct_pos,"M03, R05, R06",True,True
+311,missing_block,tn,2018-09-08,lab_pct_pos,"M03, R05, R06",True,True
+312,missing_block,tn,2018-09-15,lab_pct_pos,"M03, R05, R06",True,True
+313,missing_block,id,2024-11-30,*,R02,True,True
+314,missing_block,id,2024-12-07,*,R02,True,True
+315,missing_block,id,2024-12-14,*,R02,True,True
+316,missing_block,id,2024-12-21,*,R02,True,True
+317,missing_block,id,2024-12-28,*,R02,True,True
+318,missing_block,id,2025-01-04,*,R02,True,True
+319,missing_block,id,2025-01-11,*,R02,True,True
+320,missing_block,id,2025-01-18,*,R02,True,True
+321,missing_block,id,2025-01-25,*,R02,True,True
+322,missing_block,id,2025-02-01,*,R02,True,True
+323,missing_block,id,2025-02-08,*,R02,True,True
+324,missing_block,id,2025-02-15,*,R02,True,True
+325,missing_block,co,2021-03-20,lab_pct_pos,"M03, R05, R06",True,True
+326,missing_block,co,2021-03-27,lab_pct_pos,"M03, R05, R06",True,True
+327,missing_block,co,2021-04-03,lab_pct_pos,"M03, R05, R06",True,True
+328,missing_block,co,2021-04-10,lab_pct_pos,"M03, R05, R06",True,True
+329,missing_block,co,2021-04-17,lab_pct_pos,"M03, R05, R06",True,True
+330,missing_block,co,2021-04-24,lab_pct_pos,"M03, R05, R06",True,True
+331,missing_block,co,2021-05-01,lab_pct_pos,"M03, R05, R06",True,True
+332,missing_block,co,2021-05-08,lab_pct_pos,"M03, R05, R06",True,True
+333,missing_block,co,2021-05-15,lab_pct_pos,"M03, R05, R06",True,True
+334,missing_block,co,2021-05-22,lab_pct_pos,"M03, R05, R06",True,True
+335,missing_block,co,2021-05-29,lab_pct_pos,"M03, R05, R06",True,True
+336,missing_block,co,2021-06-05,lab_pct_pos,"M03, R05, R06",True,True
+337,missing_block,ar,2016-01-23,*,R02,True,True
+338,missing_block,ar,2016-01-30,*,R02,True,True
+339,missing_block,ar,2016-02-06,*,R02,True,True
+340,missing_block,ar,2016-02-13,*,R02,True,True
+341,missing_block,ar,2016-02-20,*,R02,True,True
+342,missing_block,ar,2016-02-27,*,R02,True,True
+343,missing_block,ar,2016-03-05,*,R02,True,True
+344,missing_block,ar,2016-03-12,*,R02,True,True
+345,missing_block,ar,2016-03-19,*,R02,True,True
+346,missing_block,ar,2016-03-26,*,R02,True,True
+347,missing_block,ar,2016-04-02,*,R02,True,True
+348,missing_block,ar,2016-04-09,*,R02,True,True
+349,missing_block,wa,2021-05-22,lab_pct_pos,"M03, R05, R06",True,True
+350,missing_block,wa,2021-05-29,lab_pct_pos,"M03, R05, R06",True,True
+351,missing_block,wa,2021-06-05,lab_pct_pos,"M03, R05, R06",True,True
+352,missing_block,wa,2021-06-12,lab_pct_pos,"M03, R05, R06",True,True
+353,missing_block,wa,2021-06-19,lab_pct_pos,"M03, R05, R06",True,True
+354,missing_block,wa,2021-06-26,lab_pct_pos,"M03, R05, R06",True,True
+355,missing_block,la,2021-09-04,*,R02,True,True
+356,missing_block,la,2021-09-11,*,R02,True,True
+357,missing_block,la,2021-09-18,*,R02,True,True
+358,missing_block,la,2021-09-25,*,R02,True,True
+359,missing_block,la,2021-10-02,*,R02,True,True
+360,missing_block,la,2021-10-09,*,R02,True,True
+361,missing_block,la,2021-10-16,*,R02,True,True
+362,missing_block,la,2021-10-23,*,R02,True,True
+363,missing_block,la,2021-10-30,*,R02,True,True
+364,missing_block,tx,2019-10-12,lab_pct_pos,"M03, R05, R06",True,True
+365,missing_block,tx,2019-10-19,lab_pct_pos,"M03, R05, R06",True,True
+366,missing_block,tx,2019-10-26,lab_pct_pos,"M03, R05, R06",True,True
+367,missing_block,tx,2019-11-02,lab_pct_pos,"M03, R05, R06",True,True
+368,missing_block,tx,2019-11-09,lab_pct_pos,"M03, R05, R06",True,True
+369,missing_block,tx,2019-11-16,lab_pct_pos,"M03, R05, R06",True,True
+370,preliminary_revised,oh,2026-10-31,ed_pct_flu,"M03, R06",True,True
+371,preliminary_revised,co,2026-10-31,hosp_flu,"M03, R06, R09",True,True
+372,preliminary_revised,mo,2026-10-31,hosp_flu,"M03, R06, R09",True,True
+373,preliminary_revised,hi,2026-11-07,ili_pct,"M03, R03, R07",True,True
+374,preliminary_revised,ne,2026-10-31,ili_pct,"M03, R03, R06, R07",True,True
+375,preliminary_revised,nm,2026-10-17,num_ili,M03,True,False
+376,preliminary_revised,nv,2026-10-17,ili_pct,"M03, R03, R06, R07",True,True
+377,preliminary_revised,nc,2026-10-17,num_ili,M03,True,False
+378,preliminary_revised,dc,2026-11-07,rate_flu,"M03, R07, R09",True,True
+379,preliminary_revised,nv,2026-10-24,rate_flu,"M03, R06, R07, R09",True,True
+380,preliminary_revised,la,2026-10-24,num_ili,M03,True,False
+381,preliminary_revised,wa,2026-10-24,rate_flu,"M03, R06, R07, R09",True,True
+382,preliminary_revised,me,2026-10-17,hosp_flu,"M03, R06, R09",True,True
+383,preliminary_revised,nc,2026-11-07,hosp_flu,"M03, R09",True,True
+384,preliminary_revised,wi,2026-10-31,rate_flu,"M03, R06, R07, R09",True,True
+385,preliminary_revised,ma,2026-10-31,ili_pct,"M03, R03, R06, R07",True,True
+386,preliminary_revised,co,2026-10-17,ed_pct_flu,"M03, R06",True,True
+387,preliminary_revised,de,2026-10-24,hosp_flu,"M03, R06, R09",True,True
+388,preliminary_revised,tn,2026-10-17,num_ili,M03,True,False
+389,preliminary_revised,ri,2026-10-24,rate_flu,"M03, R06, R07, R09",True,True
+390,preliminary_revised,la,2026-10-17,ed_pct_flu,"M03, R06",True,True
+391,preliminary_revised,sc,2026-10-31,ed_pct_flu,"M03, R06",True,True
+392,preliminary_revised,la,2026-11-07,ili_pct,"M03, R03, R07",True,True
+393,preliminary_revised,id,2026-11-07,rate_flu,"M03, R07, R09",True,True
+394,preliminary_revised,mt,2026-11-07,ed_pct_flu,M03,True,False
+395,preliminary_revised,wi,2026-10-17,ili_pct,"M03, R03, R06, R07",True,True
+396,preliminary_revised,ma,2026-10-24,ili_pct,"M03, R03, R06, R07",True,True
+397,preliminary_revised,sd,2026-10-17,ili_pct,"M03, R03, R06, R07",True,True
+398,preliminary_revised,nm,2026-11-07,rate_flu,"M03, R07, R09",True,True
+399,preliminary_revised,az,2026-10-31,num_ili,M03,True,False
+400,preliminary_revised,ca,2026-10-24,rate_flu,"M03, R06, R07, R09",True,True
+401,preliminary_revised,oh,2026-10-17,ili_pct,"M03, R03, R06, R07",True,True
+402,preliminary_revised,mt,2026-10-31,hosp_flu,"M03, R06, R09",True,True
+403,preliminary_revised,ut,2026-11-07,rate_flu,"M03, R07, R09",True,True
+404,preliminary_revised,az,2026-10-17,rate_flu,"M03, R06, R07, R09",True,True
+405,preliminary_revised,wi,2026-10-24,ed_pct_flu,"M03, R06",True,True
+406,preliminary_revised,nm,2026-10-31,hosp_flu,"M03, R06, R09",True,True
+407,preliminary_revised,il,2026-10-31,num_ili,M03,True,False
+408,preliminary_revised,az,2026-11-07,num_ili,M03,True,False
+409,preliminary_revised,sd,2026-10-31,num_ili,M03,True,False
+410,preliminary_revised,ga,2026-10-31,rate_flu,"M03, R06, R07, R09",True,True
+411,preliminary_revised,sd,2026-11-07,hosp_flu,"M03, R09",True,True
+412,preliminary_revised,nc,2026-10-31,num_ili,M03,True,False
+413,preliminary_revised,mo,2026-10-17,num_ili,M03,True,False
+414,preliminary_revised,tn,2026-11-07,hosp_flu,"M03, R09",True,True
+415,preliminary_revised,il,2026-11-07,hosp_flu,"M03, R09",True,True
+416,preliminary_revised,nj,2026-10-31,ed_pct_flu,"M03, R06",True,True
+417,preliminary_revised,in,2026-10-31,ili_pct,"M03, R03, R06, R07",True,True
+418,preliminary_revised,co,2026-11-07,ed_pct_flu,M03,True,False
+419,preliminary_revised,wa,2026-11-07,ili_pct,"M03, R03, R07",True,True
+420,preliminary_revised,va,2026-10-24,rate_flu,"M03, R06, R07, R09",True,True
+421,preliminary_revised,or,2026-10-31,hosp_flu,"M03, R06, R09",True,True
+422,preliminary_revised,ms,2026-11-07,rate_flu,"M03, R07, R09",True,True
+423,preliminary_revised,la,2026-10-31,ed_pct_flu,"M03, R06",True,True
+424,preliminary_revised,sd,2026-10-24,ili_pct,"M03, R03, R06, R07",True,True
+425,preliminary_revised,mn,2026-10-31,rate_flu,"M03, R06, R07, R09",True,True
+426,preliminary_revised,ms,2026-10-24,hosp_flu,"M03, R06, R09",True,True
+427,preliminary_revised,sc,2026-10-24,ili_pct,"M03, R03, R06, R07",True,True
+428,preliminary_revised,mn,2026-10-24,rate_flu,"M03, R06, R07, R09",True,True
+429,preliminary_revised,md,2026-11-07,hosp_flu,"M03, R09",True,True
+430,duplicate,ri,2019-06-08,*,R01,True,True
+431,duplicate,al,2019-04-20,*,R01,True,True
+432,duplicate,la,2026-10-03,*,R01,True,True
+433,duplicate,wa,2017-04-29,*,R01,True,True
+434,duplicate,mn,2021-06-12,*,R01,True,True
+435,duplicate,ak,2023-11-18,*,R01,True,True
+436,duplicate,ct,2013-10-19,*,R01,True,True
+437,duplicate,pa,2012-09-08,*,R01,True,True
+438,duplicate,id,2019-04-27,*,R01,True,True
+439,duplicate,ut,2018-03-31,*,R01,True,True
+440,duplicate,hi,2012-08-25,*,R01,True,True
+441,duplicate,ma,2014-08-09,*,R01,True,True
+442,duplicate,az,2013-12-14,*,R01,True,True
+443,duplicate,tn,2017-12-30,*,R01,True,True
+444,duplicate,sd,2011-02-26,*,R01,True,True
+445,duplicate,me,2014-05-31,*,R01,True,True
+446,duplicate,ak,2016-01-23,*,R01,True,True
+447,duplicate,hi,2011-04-23,*,R01,True,True
+448,duplicate,nv,2015-02-21,*,R01,True,True
+449,duplicate,id,2014-03-15,*,R01,True,True
+450,duplicate,ny,2016-11-05,*,R01,True,True
+451,duplicate,tx,2010-11-13,*,R01,True,True
+452,duplicate,mi,2011-01-29,*,R01,True,True
+453,duplicate,ut,2012-07-28,*,R01,True,True
+454,duplicate,ri,2015-06-27,*,R01,True,True
+455,duplicate,co,2017-04-22,*,R01,True,True
+456,duplicate,ok,2025-01-04,*,R01,True,True
+457,duplicate,ma,2012-09-08,*,R01,True,True
+458,duplicate,nm,2019-02-16,*,R01,True,True
+459,duplicate,ak,2025-06-21,*,R01,True,True
+460,duplicate,mt,2015-11-28,*,R01,True,True
+461,duplicate,dc,2026-05-16,*,R01,True,True
+462,duplicate,ky,2016-03-26,*,R01,True,True
+463,duplicate,nv,2023-04-22,*,R01,True,True
+464,duplicate,tx,2011-12-17,*,R01,True,True
+465,duplicate,ok,2015-07-04,*,R01,True,True
+466,duplicate,ar,2013-02-16,*,R01,True,True
+467,duplicate,nh,2022-05-07,*,R01,True,True
+468,duplicate,co,2024-09-21,*,R01,True,True
+469,duplicate,co,2025-01-25,*,R01,True,True
+470,duplicate,pa,2024-10-12,*,R01,True,True
+471,duplicate,nh,2019-06-29,*,R01,True,True
+472,duplicate,wy,2026-07-04,*,R01,True,True
+473,duplicate,pa,2017-07-29,*,R01,True,True
+474,duplicate,in,2014-03-08,*,R01,True,True
+475,duplicate,wa,2011-04-02,*,R01,True,True
+476,duplicate,me,2021-09-18,*,R01,True,True
+477,duplicate,la,2020-09-19,*,R01,True,True
+478,duplicate,de,2024-08-24,*,R01,True,True
+479,duplicate,co,2015-11-21,*,R01,True,True
+480,duplicate,vt,2024-05-18,*,R01,True,True
+481,duplicate,wa,2018-06-02,*,R01,True,True
+482,duplicate,sc,2010-09-11,*,R01,True,True
+483,duplicate,me,2018-12-15,*,R01,True,True
+484,duplicate,ms,2021-02-20,*,R01,True,True
+485,duplicate,ga,2025-12-27,*,R01,True,True
+486,duplicate,ia,2011-09-24,*,R01,True,True
+487,duplicate,tx,2026-10-31,*,R01,True,True
+488,duplicate,nv,2024-03-16,*,R01,True,True
+489,duplicate,id,2023-03-11,*,R01,True,True
+490,duplicate,sd,2010-12-11,*,R01,True,True
+491,duplicate,mn,2020-03-21,*,R01,True,True
+492,duplicate,mn,2024-01-13,*,R01,True,True
+493,duplicate,vt,2014-05-17,*,R01,True,True
+494,duplicate,nd,2022-07-23,*,R01,True,True
+495,duplicate,id,2012-04-14,*,R01,True,True
+496,duplicate,or,2022-02-26,*,R01,True,True
+497,duplicate,nc,2018-12-08,*,R01,True,True
+498,duplicate,me,2020-11-14,*,R01,True,True
+499,duplicate,fl,2023-04-15,*,R01,True,True
+500,duplicate,pa,2025-01-04,*,R01,True,True
+501,duplicate,wa,2015-07-11,*,R01,True,True
+502,duplicate,sc,2024-08-24,*,R01,True,True
+503,duplicate,ia,2015-06-06,*,R01,True,True
+504,duplicate,ny,2014-01-25,*,R01,True,True
+505,duplicate,oh,2015-12-26,*,R01,True,True
+506,duplicate,ms,2010-04-03,*,R01,True,True
+507,duplicate,nc,2017-03-25,*,R01,True,True
+508,duplicate,mo,2017-01-07,*,R01,True,True
+509,duplicate,tx,2025-06-14,*,R01,True,True
