@@ -73,8 +73,30 @@ def source():
     """'business' hoac 'samples': nguon ma cac ham load_* dang doc."""
     forced = os.environ.get("FLUWATCH_SOURCE", "").strip().lower()
     if forced in ("samples", "business"):
-        return forced
-    return "business" if (BUSINESS / "fact_flu_week.parquet").exists() else "samples"
+        src = forced
+    else:
+        src = "business" if (BUSINESS / "fact_flu_week.parquet").exists() else "samples"
+    _announce(src, bool(forced in ("samples", "business")))
+    return src
+
+
+_ANNOUNCED = set()
+
+
+def _announce(src, forced):
+    """Bao nguon dang doc (mot lan moi nguon moi phien). samples/ la ban cu, khac business/ -> canh bao."""
+    if src in _ANNOUNCED:
+        return
+    _ANNOUNCED.add(src)
+    how = "FLUWATCH_SOURCE" if forced else "tu dong"
+    if src == "samples":
+        log.warning(
+            "fluwatch.load: dang doc data/samples/ (%s), KHONG phai kho data/business/ cua TV2. Ban samples/ cu: "
+            "khac business/ o ili_pct, lab_pct_pos, wval, pm25_mean va khong co cac cot moi (wval_mean, "
+            "flu_vax_pct_prev, pm25_epa, bien tre...). Dung kho that: python pipelines/02_warehouse.py "
+            "(hoac tai data/business/), roi goi clear_cache().", how)
+    else:
+        log.info("fluwatch.load: dang doc %s (%s)", BUSINESS, how)
 
 
 def clear_cache():

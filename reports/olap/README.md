@@ -1,6 +1,6 @@
 # Truy van OLAP mau tren kho du lieu
 
-Sinh tu dong boi `python pipelines/02_warehouse.py --steps olap` luc 2026-11-16 00:40, tren `data/business/fluwatch.duckdb`. Do do ty le khi roll-up duoc gop co trong so (xem docstring `src/fluwatch/warehouse/olap.py`).
+Sinh tu dong boi `python pipelines/02_warehouse.py --steps olap` luc 2026-11-16 23:07, tren `data/business/fluwatch.duckdb`. Do do ty le khi roll-up duoc gop co trong so (xem docstring `src/fluwatch/warehouse/olap.py`).
 
 ## 1. Roll-up: Bang -> toan quoc, tuan -> mua: dinh nhap vien toan quoc moi mua (chi cac mua co NHSN)
 

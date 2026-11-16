@@ -4,7 +4,8 @@
   theo tram -> bang x tuan bang TRUNG VI
   co trong so dan so phuc vu cua tram (wval_mean: trung binh, de doi chieu). Gop moi lan tai (moi lan CDC chi tra mot khoang thoi gian),
   trung (tram, tuan) thi giu ban tai moi nhat.
-- vaccine: do phu vaccine cum >= 6 thang tuoi theo bang x mua (bo vh55-3he6), lay THANG CUOI CO SO cua mua.
+- vaccine: do phu vaccine cum >= 6 thang tuoi theo bang x mua (bo vh55-3he6), lay THANG CUOI CO SO cua mua;
+  thang do khong phai thang 5 (mua bi dung giua chung) thi de trong flu_vax_pct.
 """
 import re
 
@@ -18,6 +19,7 @@ WVAL_EXTREME = 1000   # WVAL tram > nguong nay coi la sai mien, bo (p99 ~ 53; mu
 WVAL_CAP = 100        # 100 < WVAL tram <= 1000: dung huong (dot tang that, vd. OK 12/2022, MN 1/2026) nhung do lon
                       # phi ly (p99,5 ~ 100, chu yeu nguon State_Territory cua OK, VA) -> chan tran o 100, khong bo
 VAX_GLOB ="Influenza_Vaccination_Coverage_for_All_Ages_(6+_Months)_*.csv"
+VAX_END_MONTH = 5     # thang cuoi mua cua FluVaxView (861/864 bang-mua dung o thang 5)
 
 
 def _files(paths, source, pattern):
@@ -136,6 +138,14 @@ def clean_vaccine(paths, clog):
     v = v.rename(columns={"Season/Survey Year": "season"})
     last = v.sort_values("_order").groupby(["state", "season"]).tail(1).copy()
     last[["vax_ci_low", "vax_ci_high"]] = last["95% CI (%)"].apply(lambda s: pd.Series(_ci(s))).values
+    # Do phu la so CONG DON: mua dung truoc thang cuoi mua (CDC khong cong bo cac thang sau) thi so thap hon that
+    # (CA 2013-14 dung thang 11: 42,6%) -> de trong, giu vax_month de biet ly do.
+    partial = last.vax_month != VAX_END_MONTH
+    if partial.any():
+        clog.step(name, f"mua khong co so thang {VAX_END_MONTH} (cuoi mua) -> flu_vax_pct de trong", partial.sum(),
+                  ", ".join(f"{s} {ss} (thang {m})" for s, ss, m in
+                            last.loc[partial, ["state", "season", "vax_month"]].itertuples(index=False)))
+        last.loc[partial, ["flu_vax_pct", "vax_ci_low", "vax_ci_high"]] = np.nan
     last["vax_sample_size"] = pd.to_numeric(last["Sample Size"].str.replace(",", ""), errors="coerce").astype("Int64")
     last["season"] = last["season"].astype("string")
     cols = ["state", "season", "flu_vax_pct", "vax_ci_low", "vax_ci_high", "vax_sample_size", "vax_month"]

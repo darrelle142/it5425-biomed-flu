@@ -1,6 +1,6 @@
 # Kiểm tra bộ kiểm tra chất lượng trên dữ liệu chèn lỗi
 
-Sinh tự động bởi `python pipelines/02_warehouse.py --steps inject` lúc 2026-11-16 00:43. Code: `src/fluwatch/warehouse/inject.py` (chèn lỗi, chấm điểm), `quality.py` (các quy tắc).
+Sinh tự động bởi `python pipelines/02_warehouse.py --steps inject` lúc 2026-11-16 23:09. Code: `src/fluwatch/warehouse/inject.py` (chèn lỗi, chấm điểm), `quality.py` (các quy tắc).
 
 **Cách chấm.** Chạy toàn bộ quy tắc trên dữ liệu gốc (baseline: 4 vi phạm có sẵn, là vấn đề thật của dữ liệu, xem `README.md`) và trên dữ liệu bị chèn lỗi. Chỉ tính vi phạm **mới**. Một lỗi trong đáp án là *bị bắt* khi có vi phạm mới trỏ đúng ô (bang, tuần, cột); lỗi cả dòng (dòng bị xóa, dòng trùng) cần vi phạm mới ở đúng (bang, tuần). Vi phạm mới không khớp đáp án nào là *báo động giả*.
 
