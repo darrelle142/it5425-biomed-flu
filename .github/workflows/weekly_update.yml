@@ -74,6 +74,13 @@ jobs:
               for k, v in s.items():
                   print(f"| {k} | {v} |")
               print()
+          if os.path.exists("data/business/fact_flu_week.parquet"):  # kho vua dung trong lan chay nay
+              q = json.load(open("reports/data_quality/results.json", encoding="utf-8"))
+              print(f"## Chat luong kho du lieu (TV2), dung luc {q['built_at']}\n\n| Quy tac | Muc | Ket qua | Vi pham | Ten |\n| --- | --- | --- | --- | --- |")
+              for r in q["rules"]:
+                  mark = {"DAT": "✅", "CANH_BAO": "⚠️"}.get(r["status"], "❌")
+                  print(f"| {r['rule']} | {r['level']} | {mark} {r['status']} | {r['violations']} | {r['name']} |")
+              print()
           rows = json.load(open("data/samples/audit_results.json", encoding="utf-8"))
           print("## Kiem tra du lieu (ban tai moi nhat cua moi nguon)\n\n| Nguon | Dat | Thoi gian | Don vi | Ghi chu |\n| --- | --- | --- | --- | --- |")
           for r in rows:
@@ -88,4 +95,7 @@ jobs:
           path: |
             data/samples/audit_results.json
             data/samples/integrity_results.json
+            reports/data_quality/README.md
+            reports/data_quality/results.json
+            reports/data_quality/violations.csv
           if-no-files-found: ignore

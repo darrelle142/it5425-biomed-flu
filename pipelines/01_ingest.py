@@ -14,8 +14,12 @@ Cac buoc (theo thu tu):
               canh bao, dung so lieu thoi tiet cu, van chay tiep)
     build     profile_sample -> profile_dataset -> build_thresholds -> build_environment
     audit     scripts/audit_data.py --strict           cong chat luong: loi thi dung, khong day
+    warehouse pipelines/02_warehouse.py --strict       kho clean/, business/ cua TV2 + 28 quy tac chat luong;
+              quy tac muc loi khong dat thi dung, khong day (cong chat luong thu hai)
+    analysis  pipelines/03_*.py, 04_*.py, 05_*.py      ket qua cua TV3-TV5 (chi chay file da co; buoc mem)
     --only-if-new: chi chay khi Delphi co so lieu moi hon ban da luu (lich tu chay dung)
-    upload    scripts/upload_hf.py --tag               chi khi co --upload; gan tag vYYYY-MM-DD cho ban vua day
+    upload    scripts/upload_hf.py --tag [--derived]   chi khi co --upload; gan tag vYYYY-MM-DD; --derived khi kho
+              vua duoc dung lai trong lan chay nay (day ca clean/, business/)
     backup    scripts/backup_hf.py                     sau upload: sao luu sang repo du phong rieng tu (buoc mem)
 
 Moi lenh co gioi han thoi gian (TIMEOUT). Nguon CDC bi chan tu Viet Nam (WVAL, vaccine, trang nguong) do workflow crawl_cdc.yml tai rieng.
@@ -29,6 +33,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 S = ROOT / "scripts"
+P = ROOT / "pipelines"
 STEPS = {
     "download": [[S / "download_data.py"]],
     "verify": [[S / "verify_integrity.py"]],
@@ -37,12 +42,16 @@ STEPS = {
     "build": [[S / "profile_sample.py"], [S / "profile_dataset.py"], [S / "build_thresholds.py"],
               [S / "build_environment.py"]],
     "audit": [[S / "audit_data.py", "--strict"]],
+    "warehouse": [[P / "02_warehouse.py", "--strict"]],
+    "analysis": [[f] for n in ("03", "04", "05") for f in sorted(P.glob(f"{n}_*.py"))],
 }
-DEFAULT = ["download", "verify", "delphi", "weather", "build", "audit"]
+DEFAULT = ["download", "verify", "delphi", "weather", "build", "audit", "warehouse", "analysis"]
 # Gioi han thoi gian moi lenh (phut): mot nguon bi treo khong keo ca job den het gio
-TIMEOUT = {"download": 20, "verify": 10, "delphi": 25, "weather": 15, "build": 20, "audit": 5, "upload": 20, "backup": 30}
+TIMEOUT = {"download": 20, "verify": 10, "delphi": 25, "weather": 15, "build": 20, "audit": 5, "warehouse": 25, "analysis": 30,
+           "upload": 20, "backup": 30}
 # Buoc "mem": that bai thi canh bao va chay tiep voi so lieu cu (thoi tiet chi phuc vu RQ4, khong can moi tuan)
-SOFT = {"weather"}
+# Phan tich cua TV3-TV5 cung la buoc mem: loi thi kho van duoc day len, file ket qua cu giu nguyen tren HF.
+SOFT = {"weather", "analysis"}
 
 
 def run(cmd, minutes):
@@ -88,14 +97,16 @@ def main():
     for step in steps:
         for cmd in STEPS[step]:
             if run(cmd, TIMEOUT[step]) != 0:
-                if step in SOFT:
-                    warn(f"Buoc '{step}' that bai; chay tiep voi so lieu {step} cu (cac file da tai van duoc giu).")
-                    break
+                if step in SOFT:  # canh bao roi chay lenh tiep theo (vd. 04 loi thi 05 van chay)
+                    name = cmd[0].name if isinstance(cmd[0], Path) else step
+                    warn(f"Buoc '{step}' ({name}) that bai; chay tiep, giu ket qua cu tren Hugging Face.")
+                    continue
                 sys.exit(f"Buoc '{step}' that bai; dung lai, khong day len Hugging Face.")
     if a.upload:
         if "audit" not in steps:
             sys.exit("Chi day len khi da chay buoc audit trong cung lan chay.")
-        if run([S / "upload_hf.py", "-m", a.message, "--tag"], TIMEOUT["upload"]) != 0:
+        derived = ["--derived"] if "warehouse" in steps else []  # kho chi duoc day khi vua dung lai
+        if run([S / "upload_hf.py", "-m", a.message, "--tag", *derived], TIMEOUT["upload"]) != 0:
             sys.exit("Day len Hugging Face that bai.")
         # Sao luu sang repo du phong: buoc mem, loi thi canh bao (ban chinh da len HF)
         if os.environ.get("GITHUB_ACTIONS") and not os.environ.get("HF_BACKUP_TOKEN"):
