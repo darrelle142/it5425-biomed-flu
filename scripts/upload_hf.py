@@ -3,11 +3,13 @@
 Cach chay (tu thu muc goc cua repo, can bien HF_TOKEN co quyen write hoac da `hf auth login`):
     python scripts/upload_hf.py --dry-run              # chi liet ke nhung gi se day
     python scripts/upload_hf.py -m "Cap nhat tuan ..."
-    python scripts/upload_hf.py -m "..." --tag    # them tag phien ban vYYYY-MM-DD (UTC) cho commit vua day
+    python scripts/upload_hf.py -m "..." --tag    # them tag phien ban vYYYY-MM-DD (ngay Viet Nam) cho commit vua day
+    python scripts/upload_hf.py -m "..." --derived   # day ca kho clean/, business/ vua dung bang pipelines/02_warehouse.py
 
 Day len:
 - file trong raw/ ma manifest tren may co nhung tren Hugging Face chua co (khong bao gio sua file cu);
-- raw/manifest.jsonl, samples/*.csv(.gz), reference/*.csv, README.md neu noi dung khac ban tren HF.
+- raw/manifest.jsonl, samples/*.csv(.gz), reference/*.csv, README.md neu noi dung khac ban tren HF;
+- voi --derived: clean/*.parquet, clean/_clean_log.json, business/*.parquet, business/*.duckdb (kho cua TV2).
 Khong day: samples/preview_*, samples/*_results.json, sandbox/, .cache/.
 
 Bao toan du lieu tho:
@@ -35,6 +37,7 @@ def main():
     ap.add_argument("--repo", default=os.environ.get("HF_REPO") or hf.MAIN_REPO)
     ap.add_argument("-m", "--message", default="Cap nhat du lieu")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--derived", action="store_true", help="day ca clean/ va business/ (chi khi kho vua duoc dung lai)")
     ap.add_argument("--tag", action="store_true", help="gan tag vYYYY-MM-DD cho commit vua day (trung thi them -2, -3...)")
     a = ap.parse_args()
     token = os.environ.get("HF_TOKEN") or None
@@ -45,7 +48,7 @@ def main():
         repo, parent = hf.read_revision(paths)
         if repo.lower() != a.repo.lower():
             raise hf.Refused(f"data/ duoc tai tu {repo}, khong phai {a.repo}.")
-        n_new, listed = hf.plan_upload(api, paths, a.repo, parent, token)
+        n_new, listed = hf.plan_upload(api, paths, a.repo, parent, token, derived=a.derived)
     except hf.Refused as err:
         sys.exit(f"{err} Dung lai.")
 

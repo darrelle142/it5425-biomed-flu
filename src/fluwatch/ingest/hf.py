@@ -44,12 +44,18 @@ def write_revision(paths, repo, sha):
     paths.hf_revision.write_text(f"{repo} {sha}\n", encoding="utf-8")
 
 
-def plan_upload(api, paths, repo, parent, token=None):
+DERIVED = ["clean/*.parquet", "clean/_clean_log.json", "business/*.parquet", "business/*.duckdb",
+           "business/*.csv", "business/*.json"]  # csv/json: file ket qua cua TV4, TV5 (risk_rate_ratios, model_eval...)
+
+
+def plan_upload(api, paths, repo, parent, token=None, derived=False):
     """Nhung file can day len repo chinh so voi commit `parent`. Tra ve (so dong manifest moi, danh sach file).
 
     - Manifest tren may phai bat dau bang dung manifest tren HF (chi them dong).
     - File raw/ moi: duoc ghi trong cac dong manifest moi, chua co tren HF; da co thi tu choi (khong ghi de).
     - samples/*.csv*, reference/*.csv, README.md: day khi noi dung khac HF.
+    - derived=True: them kho du lieu clean/, business/ (do pipelines/02_warehouse.py dung). Chi bat khi kho vua
+      duoc dung lai trong cung lan chay, de khong day ban kho cu tren may de len ban moi hon tren HF.
     """
     from huggingface_hub import hf_hub_download
     rem = Path(hf_hub_download(repo, MANIFEST, repo_type="dataset", revision=parent, token=token)
@@ -70,7 +76,11 @@ def plan_upload(api, paths, repo, parent, token=None):
         if not (paths.data / rel).exists():
             raise Refused(f"manifest ghi {rel} nhung file khong co tren may.")
         listed.append(rel)
-    for p in [*sorted(paths.samples.glob("*.csv*")), *sorted(paths.reference.glob("*.csv")), paths.data / "README.md"]:
+    extra = [p for pat in DERIVED for p in sorted(paths.data.glob(pat))] if derived else []
+    if derived and not any(p.match("fact_flu_week.parquet") for p in extra):
+        raise Refused("--derived nhung tren may chua co data/business/fact_flu_week.parquet (chay pipelines/02_warehouse.py).")
+    for p in [*sorted(paths.samples.glob("*.csv*")), *sorted(paths.reference.glob("*.csv")), paths.data / "README.md",
+              *extra]:
         rel = p.relative_to(paths.data).as_posix()
         if rel.startswith(SKIP_UPLOAD):
             continue
