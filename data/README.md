@@ -12,9 +12,19 @@ tags:
 size_categories:
   - 10K<n<100K
 configs:
+  - config_name: fact_flu_week
+    data_files: business/fact_flu_week.parquet
+    default: true
+  - config_name: fact_season_summary
+    data_files: business/fact_season_summary.parquet
+  - config_name: dim_state
+    data_files: business/dim_state.parquet
+  - config_name: dim_time
+    data_files: business/dim_time.parquet
+  - config_name: dim_source
+    data_files: business/dim_source.parquet
   - config_name: state_week
     data_files: samples/state_week_sample.csv.gz
-    default: true
   - config_name: cdc_level_state_week
     data_files: samples/cdc_level_state_week.csv.gz
   - config_name: wval_state_week
@@ -50,8 +60,13 @@ raw/manifest.jsonl          nguồn gốc từng file: url, thời điểm tải
                             "github-actions" khi tải tự động)
 raw/blocked_<ngày>.json     các URL script không tải được (HTTP 403)
 reference/                  bảng tra cứu: ngưỡng mức độ CDC, thành phố đo thời tiết, tuần nghỉ lễ
-samples/                    bảng đã ghép và làm sạch thử
+clean/                      mỗi nguồn một bảng Parquet đã chuẩn hóa (TV2; _clean_log.json ghi mọi thao tác làm sạch)
+business/                   kho dữ liệu star schema (TV2): fact_flu_week, fact_season_summary, dim_state, dim_time,
+                            dim_source, fluwatch.duckdb; kèm file kết quả của TV3–TV5 khi có
+samples/                    bảng thử ban đầu (đến 16/11/2026); dùng business/ thay thế
 ```
+
+`clean/` và `business/` được dựng lại mỗi tuần bằng `pipelines/02_warehouse.py` trên GitHub Actions, chỉ đẩy lên khi 28 quy tắc chất lượng không có lỗi. Tên cột và lineage: `docs/tu_dien_du_lieu.md` trong repo GitHub. Đọc trong Python: `pip install -e .` rồi `from fluwatch.warehouse.load import load_flu_week`, hoặc `pd.read_parquet("hf://datasets/DragonBornRay/FluDataset/business/fact_flu_week.parquet")`.
 
 ## Nguồn dữ liệu
 
