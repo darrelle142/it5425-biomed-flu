@@ -22,7 +22,8 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 
-from .business import LAG_COLS, LEVEL_NAMES, MISSING_FLAGS, PRELIM_WEEKS, _cdc_level
+from .business import (EPA_MIN_SITE_SHARE, EPA_SITE_BASE_YEARS, LAG_COLS, LEVEL_NAMES, MISSING_FLAGS, PRELIM_WEEKS,
+                       _cdc_level, epa_usable)
 from .common import HHS_REGION, STATE_TO_HHS, STATES
 
 log = logging.getLogger("fluwatch.warehouse")
@@ -48,7 +49,7 @@ LINEAGE_CHECK = {
     "flusurv_rate": ("flusurv", "flusurv_rate"),
     "wval": ("wval", "wval"), "wval_mean": ("wval", "wval_mean"), "wval_sites": ("wval", "wval_sites"),
     "temp_mean": ("weather", "temp_mean"), "abs_humidity": ("weather", "abs_humidity"),
-    "pm25_max": ("weather", "pm25_om_max"),
+    "pm25_max": ("weather", "pm25_om_max"), "pm25_om": ("weather", "pm25_om_mean"),
     "flu_vax_pct": ("vaccine", "flu_vax_pct"),
 }
 
@@ -345,6 +346,28 @@ def r09(c):
                              ignore_index=True)
 
 
+@rule("R10", 2, f"PM2.5 EPA năm mới nhất chỉ dùng khi đủ trạm (epa_sites ≥ {int(EPA_MIN_SITE_SHARE * 100)}% trung vị "
+      f"{EPA_SITE_BASE_YEARS[0]}–{EPA_SITE_BASE_YEARS[1]} của bang)", "fact_flu_week", "canh_bao")
+def r10(c):
+    f = _dedup(c["fact_flu_week"])
+    epa_col = "pm25_epa" if "pm25_epa" in f else "pm25_mean"
+    used = (f.pm25_source == "epa").fillna(False) & _num(f[epa_col]).notna()
+    sites = _num(f.epa_sites)
+    yr = pd.to_datetime(f.week).dt.year
+    if not sites.notna().any():
+        return 0, _empty()
+    y0, y1 = EPA_SITE_BASE_YEARS
+    base = sites[yr.between(y0, y1)].groupby(f.state).median()
+    need = f.state.map(base) * EPA_MIN_SITE_SHARE
+    latest = yr == yr[sites.notna()].max()
+    chk = (used & latest).to_numpy()
+    bad = chk & (sites < need).fillna(False).to_numpy()
+    x = f[bad].assign(_v=sites[bad])
+    x["_detail"] = "epa_sites = " + x._v.astype(int).astype(str) + " < " + need[bad].round(1).astype(str) + \
+        " nhung van dung EPA"
+    return int(chk.sum()), _viol(x, "fact_flu_week", "epa_sites", "_v")
+
+
 # ============================== Muc 3: quan he ==============================
 
 @rule("Q01", 3, "Khóa ngoại: fact.state, fact.week, season.state, season.season đều có trong dim", "*")
@@ -394,7 +417,8 @@ def q03(c):
     return 3 * len(d), (pd.concat(parts, ignore_index=True) if parts else _empty())
 
 
-@rule("Q04", 3, "dim_source trỏ đúng: bảng clean tồn tại, cột fact_columns có trong fact/dim; có người phụ trách",
+@rule("Q04", 3, "dim_source trỏ đúng: bảng clean tồn tại, cột fact_columns có trong fact/dim và ngược lại "
+      "(cột fact từ nguồn nào thì nguồn đó liệt kê); có người phụ trách",
       "dim_source")
 def q04(c):
     d, f = c["dim_source"], c["fact_flu_week"]
@@ -414,7 +438,19 @@ def q04(c):
         for col in ("owner", "steward"):
             if not str(r.get(col) or "").strip():
                 parts.append(_viol(row.assign(_detail=f"{r.source_id}: thieu {col}"), "dim_source", col))
-    return len(d) * 3, (pd.concat(parts, ignore_index=True) if parts else _empty())
+    # Chieu nguoc: cot fact ma tu dien ghi nguon X thi dim_source X phai liet ke (bien tre, co missing_* la phai sinh)
+    from .catalog import describe
+    listed = {r.source_id: {x.split("(")[0].strip() for x in str(r.fact_columns).split(",")} for _, r in d.iterrows()}
+    n_rev = 0
+    for col in f.columns:
+        desc = describe("fact_flu_week", col)
+        if not desc or desc[2] not in listed:
+            continue
+        n_rev += 1
+        if col not in listed[desc[2]]:
+            row = pd.DataFrame({"state": [None], "_detail": [f"{desc[2]}: fact_columns thieu '{col}'"]})
+            parts.append(_viol(row, "dim_source", "fact_columns"))
+    return len(d) * 3 + n_rev, (pd.concat(parts, ignore_index=True) if parts else _empty())
 
 
 @rule("Q05", 3, "Vaccine trong fact_flu_week khớp fact_season_summary theo (bang, mùa)", "fact_flu_week")
@@ -528,17 +564,21 @@ def m03(c):
                 x = m[bad.to_numpy()].copy()
                 x["_detail"] = ("business = " + x[col].astype(str) + ", clean/" + t + " = " + x[f"{col}__c"].astype(str))
                 parts.append(_viol(x, "fact_flu_week", col, col))
-    # pm25_mean: EPA neu co, khong thi Open-Meteo
+    # pm25_epa: EPA khi du tram; pm25_mean: pm25_epa, khong thi Open-Meteo
     if "epa_pm25" in clean and "weather" in clean:
-        m = f[["state", "week", "season", "pm25_mean"]].merge(
-            clean["epa_pm25"][["state", "week", "epa_pm25_mean"]], on=["state", "week"], how="left").merge(
+        epa = clean["epa_pm25"][["state", "week", "epa_pm25_mean", "epa_sites"]]
+        epa = epa.assign(_epa=epa.epa_pm25_mean.where(epa_usable(epa)))[["state", "week", "_epa"]]
+        cols = [c for c in ("pm25_mean", "pm25_epa") if c in f]
+        m = f[["state", "week", "season"] + cols].merge(epa, on=["state", "week"], how="left").merge(
             clean["weather"][["state", "week", "pm25_om_mean"]], on=["state", "week"], how="left")
-        exp = m.epa_pm25_mean.fillna(m.pm25_om_mean)
-        bad = _neq(m.pm25_mean, exp)
-        n += len(m)
-        if bad.any():
-            parts.append(_viol(m[bad.to_numpy()].assign(_detail="khac EPA/Open-Meteo trong clean"),
-                               "fact_flu_week", "pm25_mean", "pm25_mean"))
+        for col, exp in [("pm25_epa", m._epa), ("pm25_mean", m._epa.fillna(m.pm25_om_mean))]:
+            if col not in m:
+                continue
+            bad = _neq(m[col], exp)
+            n += len(m)
+            if bad.any():
+                parts.append(_viol(m[bad.to_numpy()].assign(_detail="khac EPA (du tram)/Open-Meteo trong clean"),
+                                   "fact_flu_week", col, col))
     return n, (pd.concat(parts, ignore_index=True) if parts else _empty())
 
 

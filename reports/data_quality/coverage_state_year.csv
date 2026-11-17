@@ -4099,8 +4099,8 @@ flu_vax_pct,Độ phủ vaccine,az,2026,0.0,40,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,ca,2010,0.0,52,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,ca,2011,0.0,53,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,ca,2012,0.0,52,2010-01-02,2026-10-03,False
-flu_vax_pct,Độ phủ vaccine,ca,2013,0.0,52,2010-01-02,2026-10-03,False
-flu_vax_pct,Độ phủ vaccine,ca,2014,0.0,52,2010-01-02,2026-10-03,False
+flu_vax_pct,Độ phủ vaccine,ca,2013,25.0,52,2010-01-02,2026-10-03,False
+flu_vax_pct,Độ phủ vaccine,ca,2014,75.0,52,2010-01-02,2026-10-03,True
 flu_vax_pct,Độ phủ vaccine,ca,2015,0.0,52,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,ca,2016,0.0,53,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,ca,2017,0.0,52,2010-01-02,2026-10-03,False
@@ -4154,8 +4154,8 @@ flu_vax_pct,Độ phủ vaccine,dc,2013,0.0,52,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,dc,2014,0.0,52,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,dc,2015,0.0,52,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,dc,2016,0.0,53,2010-01-02,2026-10-03,False
-flu_vax_pct,Độ phủ vaccine,dc,2017,0.0,52,2010-01-02,2026-10-03,False
-flu_vax_pct,Độ phủ vaccine,dc,2018,25.0,52,2010-01-02,2026-10-03,False
+flu_vax_pct,Độ phủ vaccine,dc,2017,25.0,52,2010-01-02,2026-10-03,False
+flu_vax_pct,Độ phủ vaccine,dc,2018,100.0,52,2010-01-02,2026-10-03,True
 flu_vax_pct,Độ phủ vaccine,dc,2019,75.0,52,2010-01-02,2026-10-03,True
 flu_vax_pct,Độ phủ vaccine,dc,2020,0.0,52,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,dc,2021,0.0,52,2010-01-02,2026-10-03,False
@@ -4456,8 +4456,8 @@ flu_vax_pct,Độ phủ vaccine,mo,2026,0.0,40,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,ms,2010,0.0,52,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,ms,2011,0.0,53,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,ms,2012,0.0,52,2010-01-02,2026-10-03,False
-flu_vax_pct,Độ phủ vaccine,ms,2013,0.0,52,2010-01-02,2026-10-03,False
-flu_vax_pct,Độ phủ vaccine,ms,2014,0.0,52,2010-01-02,2026-10-03,False
+flu_vax_pct,Độ phủ vaccine,ms,2013,25.0,52,2010-01-02,2026-10-03,False
+flu_vax_pct,Độ phủ vaccine,ms,2014,75.0,52,2010-01-02,2026-10-03,True
 flu_vax_pct,Độ phủ vaccine,ms,2015,0.0,52,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,ms,2016,0.0,53,2010-01-02,2026-10-03,False
 flu_vax_pct,Độ phủ vaccine,ms,2017,0.0,52,2010-01-02,2026-10-03,False

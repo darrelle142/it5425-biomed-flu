@@ -114,7 +114,7 @@ Sau 4 tuần, ILINet và NSSP gần như ổn định. NHSN vẫn còn khoảng 
 
 ## 4. Chất lượng dữ liệu
 
-- **Chạy mỗi lần dựng kho**: `python pipelines/02_warehouse.py` (bước `quality`) chạy 27 quy tắc ở 4 mức (giá trị, bản ghi, quan hệ, nhiều bảng) và báo cáo độ phủ bang × năm, xuất [reports/data_quality/README.md](../reports/data_quality/README.md), `violations.csv` (từng ô vi phạm), `coverage_state_year.csv` và `results.json` (cho trang "Sức khỏe dữ liệu" của dashboard).
+- **Chạy mỗi lần dựng kho**: `python pipelines/02_warehouse.py` (bước `quality`) chạy 28 quy tắc ở 4 mức (giá trị, bản ghi, quan hệ, nhiều bảng) và báo cáo độ phủ bang × năm, xuất [reports/data_quality/README.md](../reports/data_quality/README.md), `violations.csv` (từng ô vi phạm), `coverage_state_year.csv` và `results.json` (cho trang "Sức khỏe dữ liệu" của dashboard).
 - **Cổng chất lượng**: `--strict` thoát mã 1 khi có quy tắc mức `loi` không đạt; dùng trong workflow trước khi đẩy `business/` lên Hugging Face.
 - **Bộ kiểm tra được kiểm tra**: `--steps inject` chèn 4 loại lỗi (thiếu ngẫu nhiên, mất khối, trùng dòng, số sơ bộ bị sửa) có đáp án và chấm recall, báo động giả ([injection_test.md](../reports/data_quality/injection_test.md)). Bộ lỗi của TV4 đặt ở `data/sandbox/corrupted/` (`fact_flu_week.parquet` + `answer_key.csv` gồm `error_id, error_type, state, week, column`) thì được chấm trước.
 - **Xử lý vi phạm**: steward xem báo cáo sau mỗi lần chạy. Lỗi do làm sạch thì sửa trong `src/fluwatch/warehouse/`; lỗi do nguồn thì ghi vào [han_che_du_lieu.md](han_che_du_lieu.md) và báo người dùng bị ảnh hưởng. Không sửa tay file Parquet.

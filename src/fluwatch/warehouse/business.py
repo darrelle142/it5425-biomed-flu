@@ -27,12 +27,24 @@ PRELIM_WEEKS = 4                      # 4 tuan gan nhat la so lieu so bo (CDC co
 AH_CLIMATOLOGY_YEARS = (2010, 2025)   # ah_anomaly: tru trung binh cung bang, cung tuan MMWR cac nam nay
 FACT_START = pd.Timestamp("2010-01-02")   # tuan MMWR dau tien co thoi tiet; ILINet bat dau 10/2010
 LAG_COLS = {"ili_pct": 3, "rate_flu": 3, "hosp_flu": 3, "ed_pct_flu": 3, "lab_pct_pos": 3, "wval": 3,
-            "ah_anomaly": 4, "pm25_mean": 4, "temp_mean": 3}
+            "wval_mean": 3, "ah_anomaly": 4, "pm25_mean": 4, "temp_mean": 3}
+# flu_vax_pct_prev: mua truoc khong co so (CDC khong cong bo) thi muon mua gan nhat co so, toi da VAX_CARRY_MAX mua
+# (do phu 2 mua lien nhau tuong quan 0,84, lech trung vi 2,3 diem %). O muon gan co vax_prev_carried.
+VAX_CARRY_MAX = 1
+# NHSN: tuan so benh vien bao cao < NHSN_LOW_SHARE x trung vi cua bang cac nam NHSN_BASE_YEARS -> low_reporting
+# (bao cao tu nguyen 5-10/2024, giai doan khoi dong 2020-2021). cdc_level van tinh, nguoi dung tu loc.
+NHSN_LOW_SHARE = 0.5
+NHSN_BASE_YEARS = (2023, 2025)
 MISSING_FLAGS = {"missing_ili": "ili_pct", "missing_hosp": "rate_flu", "missing_ed": "ed_pct_flu",
                  "missing_lab": "lab_pct_pos", "missing_wval": "wval", "missing_weather": "abs_humidity",
                  "missing_pm25": "pm25_mean", "missing_vax": "flu_vax_pct"}
 MILESTONE_COLS = ["baseline", "onset_week", "peak_week", "peak_value", "severity", "source"]
 LEVEL_NAMES = ["rat_thap", "thap", "trung_binh", "cao", "rat_cao"]   # 0..4 theo CDC
+# EPA cong bo file nam hien tai tung phan: dau nam nhieu bang chi co vai tram (MT 15-18 tram -> 1 tram tu 10/01/2026).
+# Trong NAM MOI NHAT cua EPA, tuan co so tram < EPA_MIN_SITE_SHARE x trung vi cua bang cac nam EPA_SITE_BASE_YEARS
+# thi bo so EPA, dung Open-Meteo. Khong ap cho cac nam cu: mang tram 2010-2017 von nho hon, so van la so day du.
+EPA_MIN_SITE_SHARE = 0.5
+EPA_SITE_BASE_YEARS = (2022, 2025)
 
 
 def _clean(paths, name):
@@ -98,7 +110,8 @@ SOURCES = [
          users="TV3, TV4, TV5, TV6"),
     dict(source_id="nhsn", source_name="NHSN nhap vien cum", provider="CDC qua Delphi Epidata V5", access="API",
          dataset_id="nhsn", raw_path="data/raw/nhsn/", clean_table="nhsn",
-         fact_columns="hosp_flu, rate_flu, hosp_reporting, beds_flu_pct, cdc_level", unit="ca/tuan; ca/100.000 dan; %",
+         fact_columns="hosp_flu, rate_flu, hosp_reporting, low_reporting, beds_flu_pct, cdc_level",
+         unit="ca/tuan; ca/100.000 dan; %",
          frequency="tuan", geo_level="bang", revised=True, update_rule="thu Bay; tai lai ca lich su, 4 tuan gan nhat la so bo",
          license="Cong cong (CDC); trich dan Delphi", owner="TV1", steward="TV2",
          users="TV5, TV6"),
@@ -122,26 +135,26 @@ SOURCES = [
          users="TV5 (doi chieu)"),
     dict(source_id="wval", source_name="Nuoc thai WVAL cum A", provider="CDC NWSS (data.cdc.gov)",
          access="GitHub Actions (may chu My)", dataset_id="atcp-73re", raw_path="data/raw/cdc_wastewater_wval/",
-         clean_table="wval", fact_columns="wval, wval_sites", unit="WVAL (khong don vi, 0 = muc nen)",
+         clean_table="wval", fact_columns="wval, wval_mean, wval_sites, wval_sites_extreme, wval_sites_capped", unit="WVAL (khong don vi, 0 = muc nen)",
          frequency="tuan", geo_level="tram -> bang (trong so dan so phuc vu)", revised=True,
          update_rule="thu Bay (crawl_cdc.yml); moi lan tai la ca lich su, moi tuan dung ban moi nhat",
          license="Cong cong (CDC)", owner="TV1", steward="TV2",
          users="TV5, TV6"),
     dict(source_id="vaccine", source_name="Do phu vaccine cum (FluVaxView)", provider="CDC (data.cdc.gov)",
          access="GitHub Actions (may chu My)", dataset_id="vh55-3he6", raw_path="data/raw/cdc_fluvax_coverage/",
-         clean_table="vaccine", fact_columns="flu_vax_pct", unit="% dan so >= 6 thang",
-         frequency="thang (lay thang cuoi co so cua mua)", geo_level="bang", revised=True,
+         clean_table="vaccine", fact_columns="flu_vax_pct, flu_vax_pct_prev, vax_prev_carried",
+         unit="% dan so >= 6 thang", frequency="thang (lay thang 5 = cuoi mua; mua dung som de trong)", geo_level="bang", revised=True,
          update_rule="hang thang; gan cho moi tuan cua mua", license="Cong cong (CDC)", owner="TV1", steward="TV2",
          users="TV4 (what-if), TV6"),
     dict(source_id="weather", source_name="Thoi tiet + PM2.5 Open-Meteo", provider="Open-Meteo", access="API",
          dataset_id="archive-api, air-quality-api", raw_path="data/raw/openmeteo_*_cities/", clean_table="weather",
-         fact_columns="temp_mean, abs_humidity, ah_anomaly, pm25_mean (khi thieu EPA), pm25_max",
+         fact_columns="temp_mean, abs_humidity, ah_anomaly, pm25_om, pm25_mean (khi thieu EPA), pm25_max, n_cities",
          unit="do C; g/m3; ug/m3", frequency="ngay/gio -> tuan", geo_level="3-5 thanh pho -> bang (trong so dan so)",
          revised=False, update_rule="thu Bay; tai lai 35 ngay gan nhat", license="CC BY 4.0", owner="TV1", steward="TV2",
          users="TV4, TV6"),
     dict(source_id="epa", source_name="EPA AirData PM2.5 (88101)", provider="US EPA", access="file zip theo nam",
          dataset_id="daily_88101", raw_path="data/raw/epa_airdata/", clean_table="epa_pm25",
-         fact_columns="pm25_mean (uu tien)", unit="ug/m3", frequency="ngay -> tuan", geo_level="tram -> bang",
+         fact_columns="pm25_epa, pm25_mean (uu tien khi du tram), pm25_source, epa_sites", unit="ug/m3", frequency="ngay -> tuan", geo_level="tram -> bang",
          revised=True, update_rule="tai lai file nam hien tai khi EPA cap nhat (tre vai thang)",
          license="Cong cong (EPA)", owner="TV1", steward="TV2",
          users="TV4"),
@@ -186,6 +199,44 @@ def _cdc_level(paths, df):
     return lvl
 
 
+def epa_usable(epa):
+    """Mat na True cho dong EPA (cot state, week, epa_pm25_mean, epa_sites) du tram de dai dien cho bang.
+
+    Dung chung cho business (tao pm25_epa) va quality (R10, doi soat M03).
+    """
+    has = epa["epa_pm25_mean"].notna()
+    yr = epa["week"].dt.year
+    y0, y1 = EPA_SITE_BASE_YEARS
+    base = epa[yr.between(y0, y1) & has].groupby("state")["epa_sites"].median()
+    need = epa["state"].map(base) * EPA_MIN_SITE_SHARE
+    latest = yr == yr[has].max()
+    thin = latest & need.notna() & (epa["epa_sites"].astype("float64") < need)
+    return has & ~thin
+
+
+def low_reporting(f):
+    """True khi so benh vien bao cao NHSN < NHSN_LOW_SHARE x trung vi NHSN_BASE_YEARS cua bang. Dung chung voi quality."""
+    rep = pd.to_numeric(f["hosp_reporting"], errors="coerce").astype("float64")
+    y0, y1 = NHSN_BASE_YEARS
+    base = rep[pd.to_datetime(f["week"]).dt.year.between(y0, y1)].groupby(f["state"]).median()
+    need = f["state"].map(base) * NHSN_LOW_SHARE
+    return (rep < need).fillna(False).astype(bool)
+
+
+def _vax_prev(vax, seasons):
+    """(state, season) -> flu_vax_pct_prev, vax_prev_carried. Mua truoc trong thi lay mua gan nhat co so (<= VAX_CARRY_MAX mua)."""
+    seasons = sorted(set(seasons) | set(vax.season.dropna()))
+    wide = vax.pivot(index="season", columns="state", values="flu_vax_pct").reindex(seasons)
+    exact = wide.shift(1)                                    # dung mua truoc
+    filled = exact.ffill(limit=VAX_CARRY_MAX)                # mua truoc trong -> muon mua cu hon
+    out = pd.DataFrame({"flu_vax_pct_prev": filled.stack(future_stack=True),
+                        "vax_prev_carried": (exact.isna() & filled.notna()).stack(future_stack=True)})
+    out.index.names = ["season", "state"]
+    out = out.reset_index()
+    out["season"] = out["season"].astype(vax.season.dtype)
+    return out[["state", "season", "flu_vax_pct_prev", "vax_prev_carried"]]
+
+
 def _pct_change(cur, prev):
     out = (cur - prev) / prev * 100
     return out.where(prev > 0)          # tuan truoc = 0 -> khong xac dinh (khong de vo cung)
@@ -212,9 +263,18 @@ def build_fact_flu_week(paths, dim_time):
                                 "wval_sites_capped"]]
     f = f.merge(wx, on=["state", "week"], how="left").merge(epa, on=["state", "week"], how="left") \
          .merge(ww, on=["state", "week"], how="left")
-    f["pm25_mean"] = f["epa_pm25_mean"].fillna(f["pm25_om_mean"])
-    f["pm25_source"] = pd.Series(np.where(f.epa_pm25_mean.notna(), "epa",
-                                          np.where(f.pm25_om_mean.notna(), "openmeteo", None)), dtype="string")
+    # Hai nguon PM2.5 lech nhau (Open-Meteo cao hon EPA ~25%, tuong quan 0,55) -> giu rieng tung nguon:
+    # pm25_epa (thuoc do lich su, dung cho hoi quy) va pm25_om (co den hien tai). pm25_mean giu hop dong cu.
+    ok = epa_usable(f)
+    n_thin = int((f.epa_pm25_mean.notna() & ~ok).sum())
+    if n_thin:
+        log.info("pm25: bo %d bang-tuan EPA thieu tram (< %d%% trung vi %d-%d, nam moi nhat) -> dung Open-Meteo",
+                 n_thin, EPA_MIN_SITE_SHARE * 100, *EPA_SITE_BASE_YEARS)
+    f["pm25_epa"] = f["epa_pm25_mean"].where(ok)
+    f["pm25_om"] = f["pm25_om_mean"]
+    f["pm25_mean"] = f["pm25_epa"].fillna(f["pm25_om"])
+    f["pm25_source"] = pd.Series(np.where(f.pm25_epa.notna(), "epa",
+                                          np.where(f.pm25_om.notna(), "openmeteo", None)), dtype="string")
     f["pm25_max"] = f["pm25_om_max"]
 
     t = dim_time[["week", "epiweek", "mmwr_year", "mmwr_week", "season", "season_week",
@@ -225,8 +285,8 @@ def build_fact_flu_week(paths, dim_time):
     f = f.merge(vax, on=["state", "season"], how="left")
     # flu_vax_pct la so cuoi mua (thang 5) -> ro ri thong tin tuong lai neu dung lam bien du bao dau mua.
     # flu_vax_pct_prev: do phu cuoi mua TRUOC, da biet tu dau mua nay.
-    prev = vax.assign(season=vax.season.map(lambda x: f"{int(x[:4]) + 1}-{(int(x[:4]) + 2) % 100:02d}"))
-    f = f.merge(prev.rename(columns={"flu_vax_pct": "flu_vax_pct_prev"}), on=["state", "season"], how="left")
+    f = f.merge(_vax_prev(vax, f.season.dropna().unique()), on=["state", "season"], how="left")
+    f["vax_prev_carried"] = f["vax_prev_carried"].fillna(False).astype(bool)
 
     # ah_anomaly = abs_humidity - trung binh cung bang, cung tuan MMWR, nam 2010-2025 (tuan 53 dung trung binh tuan 52)
     y0, y1 = AH_CLIMATOLOGY_YEARS
@@ -237,6 +297,7 @@ def build_fact_flu_week(paths, dim_time):
     f = f.drop(columns=["_mw", "_clim"])
 
     f["cdc_level"] = _cdc_level(paths, f)
+    f["low_reporting"] = low_reporting(f)
     f["cdc_level_name"] = f["cdc_level"].map(dict(enumerate(LEVEL_NAMES))).astype("string")
 
     # Bien tre: tren khung du tuan nen shift(k) dung la k tuan truoc
@@ -265,8 +326,8 @@ def build_fact_flu_week(paths, dim_time):
              "ili_pct", "num_ili", "num_patients", "hosp_flu", "rate_flu", "cdc_level", "ed_pct_flu", "lab_pct_pos",
              "wval", "temp_mean", "abs_humidity", "ah_anomaly", "pm25_mean", "flu_vax_pct",
              "holiday_week", "winter_break", "weeks_to_holiday", "is_preliminary"]      # hop dong muc 4.1
-    extra = ["mmwr_year", "mmwr_week", "num_providers", "hosp_reporting", "beds_flu_pct", "cdc_level_name",
-             "ed_pct_covid", "lab_specimens", "flusurv_rate", "wval_mean", "wval_sites", "wval_sites_extreme", "wval_sites_capped", "flu_vax_pct_prev", "pm25_max", "pm25_source", "epa_sites",
+    extra = ["mmwr_year", "mmwr_week", "num_providers", "hosp_reporting", "low_reporting", "beds_flu_pct", "cdc_level_name",
+             "ed_pct_covid", "lab_specimens", "flusurv_rate", "wval_mean", "wval_sites", "wval_sites_extreme", "wval_sites_capped", "flu_vax_pct_prev", "vax_prev_carried", "pm25_epa", "pm25_om", "pm25_max", "pm25_source", "epa_sites",
              "n_cities", "wow_pct", "yoy_pct", "ili_wow_pct", "ili_yoy_pct"]
     lags = [f"{c}_lag{i}" for c, k in LAG_COLS.items() for i in range(1, k + 1)]
     quality = list(MISSING_FLAGS) + ["issue_date"]

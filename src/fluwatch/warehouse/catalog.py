@@ -12,7 +12,8 @@ import re
 
 import pandas as pd
 
-from .business import AH_CLIMATOLOGY_YEARS, LAG_COLS, MISSING_FLAGS, PRELIM_WEEKS, SOURCES
+from .business import (AH_CLIMATOLOGY_YEARS, EPA_MIN_SITE_SHARE, EPA_SITE_BASE_YEARS, LAG_COLS, MISSING_FLAGS,
+                       NHSN_BASE_YEARS, NHSN_LOW_SHARE, PRELIM_WEEKS, SOURCES, VAX_CARRY_MAX)
 
 DELPHI = "Delphi Epidata V5 `{f}` (file mới nhất) → `clean/{t}`: lọc 50 bang + DC, bỏ trùng (bang, tuần) giữ bản công bố mới nhất, âm → thiếu"
 
@@ -36,8 +37,8 @@ C = {
         "temp_mean": ("Nhiệt độ trung bình tuần, có trọng số dân số 3–5 đô thị", "°C", "weather", "Open-Meteo theo ngày từng đô thị (`reference/cities.csv`) → trung bình tuần → trung bình có trọng số dân số (`clean/weather`)"),
         "abs_humidity": ("Độ ẩm tuyệt đối trung bình tuần", "g/m³", "weather", "Open-Meteo nhiệt độ + độ ẩm tương đối theo ngày → công thức Magnus → trung bình tuần → trọng số dân số (`clean/weather`)"),
         "ah_anomaly": ("Độ ẩm tuyệt đối trừ trung bình nhiều năm cùng bang, cùng tuần MMWR (loại mùa vụ)", "g/m³", "phái sinh", f"`abs_humidity` − trung bình cùng (bang, tuần MMWR) các năm {AH_CLIMATOLOGY_YEARS[0]}–{AH_CLIMATOLOGY_YEARS[1]}; tuần 53 dùng trung bình tuần 52"),
-        "pm25_mean": ("PM2.5 trung bình tuần", "µg/m³", "epa", "ưu tiên EPA AirData 88101 (`clean/epa_pm25`: trung bình các trạm trong bang); tuần không có EPA thì dùng Open-Meteo (`clean/weather.pm25_om_mean`); nguồn ghi ở `pm25_source`"),
-        "flu_vax_pct": ("Độ phủ vaccine cúm ≥ 6 tháng tuổi của mùa (tháng cuối mùa có số)", "% dân số", "vaccine", "CDC `vh55-3he6` → `clean/vaccine`: lấy tháng cuối có số của mùa (thường tháng 5) → gán cho mọi tuần của mùa. **Chú ý**: là số cuối mùa, không dùng làm biến dự báo các tuần đầu mùa (dùng `flu_vax_pct_prev`)"),
+        "pm25_mean": ("PM2.5 trung bình tuần, **ghép hai nguồn** (EPA, thiếu thì Open-Meteo). Hai nguồn lệch thang đo (Open-Meteo cao hơn EPA ~25%, tương quan 0,55): phân tích theo thời gian/hồi quy nên dùng `pm25_epa`", "µg/m³", "epa", "`pm25_epa`, ô trống thì lấy `pm25_om`; nguồn ghi ở `pm25_source`"),
+        "flu_vax_pct": ("Độ phủ vaccine cúm ≥ 6 tháng tuổi của mùa (tháng cuối mùa có số)", "% dân số", "vaccine", "CDC `vh55-3he6` → `clean/vaccine`: lấy tháng 5 (cuối mùa) → gán cho mọi tuần của mùa; mùa CDC dừng công bố trước tháng 5 (CA, MS 2013-14; DC 2017-18) để trống vì độ phủ là số cộng dồn, số giữa mùa thấp hơn thật (xem `fact_season_summary.vax_month`). **Chú ý**: là số cuối mùa, không dùng làm biến dự báo các tuần đầu mùa (dùng `flu_vax_pct_prev`)"),
         "holiday_week": ("Tuần có Lễ Tạ ơn, Giáng sinh hoặc Năm mới", "0/1", "holidays", "`reference/holidays.csv` (nhóm tự lập) qua `dim_time`"),
         "winter_break": ("Tuần nằm trong kỳ nghỉ đông (tạm: 18/12 – 1/1)", "0/1", "holidays", "`reference/holidays.csv` qua `dim_time`"),
         "weeks_to_holiday": ("Số tuần đến tuần lễ gần nhất phía trước", "tuần", "holidays", "`reference/holidays.csv` qua `dim_time`"),
@@ -46,6 +47,7 @@ C = {
         "mmwr_week": ("Tuần MMWR 1–53", "tuần", "dim", "tính từ `week`"),
         "num_providers": ("Số cơ sở báo cáo ILINet trong tuần", "cơ sở", "ilinet", DELPHI.format(f="fluview_ilinet/num_providers__state", t="ilinet")),
         "hosp_reporting": ("Số bệnh viện báo cáo NHSN trong tuần", "bệnh viện", "nhsn", DELPHI.format(f="nhsn/hosprep_confirmed_admissions_flu_ew__state", t="nhsn")),
+        "low_reporting": (f"Cờ: số bệnh viện báo cáo NHSN tuần này < {int(NHSN_LOW_SHARE * 100)}% mức thường của bang → `rate_flu`, `hosp_flu`, `cdc_level` thấp giả tạo (báo cáo tự nguyện 5–10/2024, giai đoạn khởi động 2020–2021); nên loại khi huấn luyện/đánh giá", "bool", "nhsn", f"`hosp_reporting` < {NHSN_LOW_SHARE} × trung vị `hosp_reporting` của bang các năm {NHSN_BASE_YEARS[0]}–{NHSN_BASE_YEARS[1]}"),
         "beds_flu_pct": ("% giường nội trú có bệnh nhân cúm", "%", "nhsn", DELPHI.format(f="nhsn/inpatient_beds_flu_pct_ew__state", t="nhsn")),
         "cdc_level_name": ("Tên mức CDC: rat_thap, thap, trung_binh, cao, rat_cao", "–", "phái sinh", "ánh xạ từ `cdc_level`"),
         "ed_pct_covid": ("% lượt cấp cứu do COVID-19 (NSSP)", "%", "nssp", DELPHI.format(f="nssp/pct_ed_visits_covid__state", t="nssp")),
@@ -55,10 +57,13 @@ C = {
         "wval_sites_extreme": ("Số trạm bị bỏ vì WVAL > 1000 (sai miền)", "trạm", "wval", "đếm trong `clean/wval`, có ghi `_clean_log.json`"),
         "wval_sites_capped": ("Số trạm có WVAL 100–1000 bị chặn trần ở 100", "trạm", "wval", "đếm trong `clean/wval`, có ghi `_clean_log.json`"),
         "wval_mean": ("WVAL trung bình có trọng số dân số phục vụ (nhạy hơn `wval` ở mức thấp, vì trung vị hay dính ở 1)", "không đơn vị", "wval", "như `wval` nhưng lấy trung bình có trọng số thay cho trung vị (`clean/wval.wval_mean`)"),
-        "flu_vax_pct_prev": ("Độ phủ vaccine cuối mùa **trước** (đã biết từ đầu mùa này): dùng cột này làm biến dự báo", "% dân số", "vaccine", "`clean/vaccine.flu_vax_pct` của mùa trước, ghép theo (bang, mùa)"),
+        "flu_vax_pct_prev": ("Độ phủ vaccine cuối mùa **trước** (đã biết từ đầu mùa này): dùng cột này làm biến dự báo", "% dân số", "vaccine", f"`clean/vaccine.flu_vax_pct` của mùa trước, ghép theo (bang, mùa); mùa trước CDC không công bố thì mượn mùa gần nhất có số (tối đa {VAX_CARRY_MAX} mùa), đánh dấu ở `vax_prev_carried`"),
+        "vax_prev_carried": ("`flu_vax_pct_prev` là số **mượn** từ mùa cũ hơn (mùa trước không có số)", "bool", "phái sinh", f"True khi mùa trước trống mà lùi ≤ {VAX_CARRY_MAX} mùa nữa có số (vd. MS 2026-27 mượn 2024-25)"),
         "pm25_max": ("PM2.5 theo giờ lớn nhất trong tuần (Open-Meteo), có trọng số dân số", "µg/m³", "weather", "Open-Meteo theo giờ → max tuần từng đô thị → trọng số dân số (`clean/weather.pm25_om_max`)"),
-        "pm25_source": ("Nguồn của `pm25_mean`: epa hoặc openmeteo", "–", "phái sinh", "`epa` nếu có số EPA tuần đó, không thì `openmeteo`"),
-        "epa_sites": ("Số trạm EPA có số PM2.5 trong tuần", "trạm", "epa", "đếm trạm trong `clean/epa_pm25`"),
+        "pm25_epa": ("PM2.5 trung bình tuần chỉ từ EPA AirData 88101 (một thước đo xuyên suốt 2010 → 5/2026): dùng cột này cho hồi quy", "µg/m³", "epa", f"`clean/epa_pm25.epa_pm25_mean` (trung bình các trạm trong bang); trong năm mới nhất của EPA (file công bố dở), tuần có `epa_sites` < {int(EPA_MIN_SITE_SHARE * 100)}% trung vị {EPA_SITE_BASE_YEARS[0]}–{EPA_SITE_BASE_YEARS[1]} của bang thì để trống"),
+        "pm25_om": ("PM2.5 trung bình tuần chỉ từ Open-Meteo (mô hình CAMS, có đến tuần hiện tại), có trọng số dân số", "µg/m³", "weather", "Open-Meteo theo giờ → trung bình tuần từng đô thị → trọng số dân số (`clean/weather.pm25_om_mean`)"),
+        "pm25_source": ("Nguồn của `pm25_mean`: epa hoặc openmeteo", "–", "phái sinh", "`epa` nếu `pm25_epa` có số, không thì `openmeteo`"),
+        "epa_sites": ("Số trạm EPA có số PM2.5 trong tuần (kể cả tuần bị bỏ vì thiếu trạm)", "trạm", "epa", "đếm trạm trong `clean/epa_pm25`"),
         "n_cities": ("Số đô thị có số thời tiết trong tuần (1–5)", "đô thị", "weather", "đếm trong `clean/weather`"),
         "wow_pct": ("% thay đổi `rate_flu` so với tuần trước", "%", "phái sinh", "(`rate_flu` − `rate_flu_lag1`) / `rate_flu_lag1` × 100; trống khi tuần trước = 0"),
         "yoy_pct": ("% thay đổi `rate_flu` so với cùng `season_week` mùa trước", "%", "phái sinh", "như `wow_pct`, mẫu số là cùng tuần trong mùa của mùa trước"),
@@ -90,7 +95,7 @@ C = {
         "pm25_mean": ("PM2.5 trung bình mùa cúm", "µg/m³", "phái sinh", "trung bình `pm25_mean` (MMWR 40–20)"),
         "vax_ci_low": ("Cận dưới khoảng tin cậy 95% của độ phủ vaccine", "%", "vaccine", "tách từ cột `95% CI (%)` của CDC"),
         "vax_ci_high": ("Cận trên khoảng tin cậy 95% của độ phủ vaccine", "%", "vaccine", "tách từ cột `95% CI (%)` của CDC"),
-        "vax_month": ("Tháng của số vaccine được dùng (tháng cuối mùa có số)", "tháng", "vaccine", "`clean/vaccine`"),
+        "vax_month": ("Tháng cuối mùa có số vaccine; khác 5 nghĩa là CDC dừng công bố giữa mùa và `flu_vax_pct` để trống", "tháng", "vaccine", "`clean/vaccine`"),
         "is_current_season": ("Mùa đang diễn ra (mùa của tuần mới nhất)", "bool", "phái sinh", "`season` = mùa của tuần cuối trong fact"),
     },
     # ------------------------------------------------------------------ dim_state

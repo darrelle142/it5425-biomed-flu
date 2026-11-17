@@ -2,15 +2,15 @@
 
 > 📍 [Mục lục tài liệu](README.md) · Từ điển dữ liệu: [tu_dien_du_lieu.md](tu_dien_du_lieu.md) · Quản trị dữ liệu: [quan_tri_du_lieu.md](quan_tri_du_lieu.md) · Báo cáo chất lượng: [../reports/data_quality/README.md](../reports/data_quality/README.md)
 
-**Tóm tắt 30 giây.** Đã xong cả 5 việc của TV2: kho `clean/`, `business/` (star schema + DuckDB), bộ kiểm tra chất lượng 4 mức, bài kiểm tra trên dữ liệu chèn lỗi, và 2 tài liệu quản trị. Dữ liệu hiện tại đạt 26/27 quy tắc chất lượng; quy tắc còn lại chỉ là 4 cảnh báo do làm tròn số. Đã sửa 3 vấn đề dữ liệu: **thêm cột thì có, nhưng không cột hợp đồng nào bị đổi tên hay bỏ**. Tuy nhiên, giá trị của `ili_pct`, `lab_pct_pos` và `wval` đã thay đổi ở một số ô; ai đã chạy phân tích trên các cột này nên đọc mục 2.
+**Tóm tắt 30 giây.** Đã xong cả 5 việc của TV2: kho `clean/`, `business/` (star schema + DuckDB), bộ kiểm tra chất lượng 4 mức, bài kiểm tra trên dữ liệu chèn lỗi, và 2 tài liệu quản trị. Dữ liệu hiện tại đạt 27/28 quy tắc chất lượng; quy tắc còn lại chỉ là 4 cảnh báo do làm tròn số. Đã sửa 3 vấn đề dữ liệu: **thêm cột thì có, nhưng không cột hợp đồng nào bị đổi tên hay bỏ**. Tuy nhiên, giá trị của `ili_pct`, `lab_pct_pos` và `wval` đã thay đổi ở một số ô; ai đã chạy phân tích trên các cột này nên đọc mục 2.
 
 ## 1. Đã xong
 
 | Việc | Kết quả | Xem ở đâu |
 | --- | --- | --- |
 | 1. `data/clean/` | 9 bảng, mỗi nguồn một bảng; mọi thao tác làm sạch ghi kèm số dòng | `data/clean/_clean_log.json` |
-| 2. `data/business/` | `fact_flu_week` (44.880 dòng = 51 bang × 880 tuần, 83 cột), `fact_season_summary`, `dim_state`, `dim_time`, `dim_source`; file `fluwatch.duckdb` có 4 view và 8 truy vấn mẫu roll-up, drill-down, slice, dice, pivot | [reports/olap/README.md](../reports/olap/README.md) |
-| 3. Kiểm tra chất lượng | 27 quy tắc ở 4 mức (giá trị, bản ghi, quan hệ, nhiều bảng) và báo cáo độ phủ bang × năm. Tổng 51 bang khớp từng ca với số toàn quốc và từng vùng HHS trong file NHSN của CDC | [reports/data_quality/README.md](../reports/data_quality/README.md) |
+| 2. `data/business/` | `fact_flu_week` (44.880 dòng = 51 bang × 880 tuần, 90 cột), `fact_season_summary`, `dim_state`, `dim_time`, `dim_source`; file `fluwatch.duckdb` có 4 view và 8 truy vấn mẫu roll-up, drill-down, slice, dice, pivot | [reports/olap/README.md](../reports/olap/README.md) |
+| 3. Kiểm tra chất lượng | 28 quy tắc ở 4 mức (giá trị, bản ghi, quan hệ, nhiều bảng) và báo cáo độ phủ bang × năm. Tổng 51 bang khớp từng ca với số toàn quốc và từng vùng HHS trong file NHSN của CDC | [reports/data_quality/README.md](../reports/data_quality/README.md) |
 | 4. Dữ liệu chèn lỗi | Chèn khoảng 510 lỗi thuộc 4 loại (thiếu ngẫu nhiên, mất khối nhiều tuần, trùng dòng, số sơ bộ bị sửa): **bắt được 100%, 0 báo động giả**, thử với 4 seed × 2 chế độ | [reports/data_quality/injection_test.md](../reports/data_quality/injection_test.md) |
 | 5. Tài liệu | Từ điển dữ liệu kèm lineage từng cột; người phụ trách từng nguồn; quy tắc cập nhật 4 tuần gần nhất | [tu_dien_du_lieu.md](tu_dien_du_lieu.md), [quan_tri_du_lieu.md](quan_tri_du_lieu.md) |
 
