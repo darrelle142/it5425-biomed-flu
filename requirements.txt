@@ -7,3 +7,5 @@ openpyxl>=3.1
 huggingface_hub>=0.24
 pyarrow>=15.0
 duckdb>=1.0
+matplotlib>=3.8
+seaborn>=0.13
