@@ -7,6 +7,8 @@ Cach chay (tu thu muc goc cua repo):
     python scripts/download_data.py --revision v2026-11-14     # tai dung phien ban da gan tag (hoac ma commit)
 
 Chi tai file moi hoac da thay doi; chay lai nhieu lan duoc.
+Khong tai README.md: ban goc cua the dataset la data/README.md trong repo GitHub, upload_hf.py day no len HF.
+(Tai ve se ghi de ban moi trong repo bang ban cu tren HF, roi lan day sau lai day nguoc ban cu len.)
 Commit Hugging Face vua tai duoc ghi vao data/.hf_revision; upload_hf.py dung no de khong ghi de
 nhung gi nguoi khac day len sau thoi diem tai.
 """
@@ -24,7 +26,7 @@ from fluwatch.ingest import hf  # noqa: E402
 from fluwatch.ingest.paths import Paths  # noqa: E402
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--samples", action="store_true", help="chi tai business/, samples/, reference/ va README (khong tai raw/)")
+ap.add_argument("--samples", action="store_true", help="chi tai business/, samples/, reference/ (khong tai raw/)")
 ap.add_argument("--repo", default=os.environ.get("HF_REPO") or hf.MAIN_REPO,
                 help="repo dataset tren Hugging Face (mac dinh: bien HF_REPO)")
 ap.add_argument("--revision", default=None, help="tag (vd. v2026-11-14) hoac ma commit; mac dinh: ban moi nhat")
@@ -32,8 +34,8 @@ args = ap.parse_args()
 
 paths = Paths(ROOT)
 sha = HfApi().dataset_info(args.repo, revision=args.revision).sha
-patterns = ["business/*", "samples/*", "reference/*", "README.md"] if args.samples else None
+patterns = ["business/*", "samples/*", "reference/*"] if args.samples else None
 path = snapshot_download(repo_id=args.repo, repo_type="dataset", revision=sha,
-                         local_dir=paths.data, allow_patterns=patterns)
+                         local_dir=paths.data, allow_patterns=patterns, ignore_patterns=["README.md"])
 hf.write_revision(paths, args.repo, sha)
 print(f"Da tai ve: {path} (commit {sha[:8]})")
