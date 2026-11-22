@@ -22,7 +22,7 @@ def compute_baselines(df: pd.DataFrame):
     for (state, season), grp in df.groupby(['state', 'season'], sort=False):
         source = grp['signal_source'].iloc[0]
 
-        if season == '2009-10':
+        if season in ('2009-10', '2020-21'):
             records.append({
                 'state': state,
                 'season': season,
@@ -77,7 +77,7 @@ def detect_season_milestones(df: pd.DataFrame):
                     onset_week = weeks[i]
                     break
 
-        if grp['signal_value'].notna().any():
+        if season != '2026-27' and grp['signal_value'].notna().any():
             peak_idx = grp['signal_value'].idxmax()
             peak_value = grp.loc[peak_idx, 'signal_value']
             peak_week = grp.loc[peak_idx, 'season_week']
@@ -89,6 +89,8 @@ def detect_season_milestones(df: pd.DataFrame):
         for week in weeks:
             if np.isnan(onset_week) or week < onset_week:
                 phases.append("Not started")
+            elif season == '2026-27':
+                phases.append("Rising")
             elif not np.isnan(peak_week) and week == peak_week:
                 phases.append("Peak")
             elif not np.isnan(peak_week) and week < peak_week:
