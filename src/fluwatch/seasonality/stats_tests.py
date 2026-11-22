@@ -19,7 +19,7 @@ def run_hhs_comparisons(milestones_df: pd.DataFrame, dim_state: pd.DataFrame):
             stat, p_val = kruskal(*groups)
             results.append({
                 'metric': metric,
-                'test': "Krusal-Wallis across HHS Regions",
+                'test': "Kruskal-Wallis across HHS Regions",
                 'statistic': round(stat, 4),
                 'p_value': round(p_val, 6),
                 'significant_005': p_val < 0.05

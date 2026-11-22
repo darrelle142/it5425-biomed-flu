@@ -29,6 +29,8 @@ def compute_baselines(df: pd.DataFrame):
                 'baseline': np.nan
             })
 
+            continue
+
         if source == 'NSSP':
             sub = df[(df['state'] == state) & (df['season'] != '2020-21') & off_mask]['ed_pct_flu'].dropna()
         else:
