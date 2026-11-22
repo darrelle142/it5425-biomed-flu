@@ -46,7 +46,10 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - run: pip install -r requirements.txt
+      - name: Cai thu vien va goi fluwatch (pipelines/03-05 import fluwatch.*)
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
 
       - name: Tai du lieu hien tai tu Hugging Face
         run: python scripts/download_data.py
