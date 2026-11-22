@@ -56,7 +56,7 @@ def plot_season_overlay(df: pd.DataFrame, output_dir: Path, current_season: str 
         else:
             ax.plot(grp['season_week'], grp['ili_pct'], color='#BDBDBD', alpha=0.6, linewidth=1.2)
 
-    ax.set_title(f"National % ILI trajectory comparing early season {current_season} against historical seasons")
+    ax.set_title(f"National % ILI trajectory of {current_season} compared against historical seasonal patterns")
     ax.set_xlabel("Season week (Starting from MMWR week 40)")
     ax.set_ylabel("Mean outpatient visits for ILI (%)")
     ax.set_xlim(1, 55)
@@ -74,7 +74,7 @@ def plot_severity_boxplot(milestones: pd.DataFrame, output_dir: Path):
     sub = sub[sub['signal_source'] == 'ILINet'].sort_values('season')
 
     sns.boxplot(data=sub, x='season', y='peak_value', color='#56B4E9', ax=ax, fliersize=3)
-    ax.set_title("Peak influenza severity varies substantially across seasons and reached a record high in 2024-25")
+    ax.set_title("Seasonal peak % ILI varies substantially across years with higher medians in recent seasons")
     ax.set_xlabel("Flu season")
     ax.set_ylabel("Seasonal peak outpatient ILI (%)")
     plt.xticks(rotation=30)
@@ -88,13 +88,13 @@ def plot_onset_distribution(milestones: pd.DataFrame, output_dir: Path):
     setup_style()
 
     fig, ax = plt.subplots(figsize=(10, 5))
-    sub = milestones[(~milestones['season'].isin(EXCLUDE_SEASON)) & (milestones['onset_week'].notna())]
+    sub = milestones[(~milestones['season'].isin(EXCLUDE_SEASON + ['2026-27'])) & (milestones['onset_week'].notna())]
 
     ax.hist(sub['onset_week'], bins=20, color='#0072B2', edgecolor='white', alpha=0.85)
     median_w = sub['onset_week'].median()
     ax.axvline(median_w, color='#D55E00', linestyle='--', linewidth=2)
     ax.text(median_w + 0.3, ax.get_ylim()[1] * 0.9, f"Median: Week {int(median_w)}", color='#D55E00', fontweight='bold')
-    ax.set_title("Half of state-seasons cross the epidemic onset threshold by season week 7")
+    ax.set_title("State-season epidemic onset timing is right-skewed and concentrated in the first half of the season")
     ax.set_xlabel("Onset week (Weeks since MMWR week 40)")
     ax.set_ylabel("State-Season count")
 
@@ -114,7 +114,7 @@ def plot_lag_and_acf(df: pd.DataFrame, output_dir: Path):
     ax[0].set_ylabel("Current week % ILI (t)")
 
     plot_acf(nat, lags=20, ax=ax[1], color='#009E73')
-    ax[1].set_title("Autocorrelation function (ACF) remains significantly positive for 8 - 10 weeks")
+    ax[1].set_title("Autocorrelation function (ACF) decays gradually across multi-week lags")
     ax[1].set_xlabel("Lag (Weeks)")
     ax[1].set_ylabel("Autocorrelation")
 
@@ -158,7 +158,7 @@ def plot_cluster_dendrogram(Z: np.ndarray, state_labels: list, output_dir: Path)
         color_threshold=0.7 * max(Z[:, 2])
     )
 
-    ax.set_title("Hierarchical clustering groups 51 jurisdictions by seasonal epidemic curve shape")
+    ax.set_title(f"Hierarchical clustering groups {len(state_labels)} jurisdictions by normalized seasonal curve shape")
     ax.set_xlabel("State")
     ax.set_ylabel("Ward linkage distance (Z-score normalized curves)")
 

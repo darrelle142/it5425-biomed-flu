@@ -2,6 +2,12 @@ import numpy as np
 import pandas as pd
 
 
+def mask_sparse_ili(df: pd.DataFrame, max_missing_ratio=0.3):
+    df = df.copy()
+    missing_ratio = df.groupby(['state', 'season'])['ili_pct'].transform(lambda s: s.isna().mean())
+    df.loc[missing_ratio > max_missing_ratio, 'ili_pct'] = np.nan
+    return df
+
 def prepare_signal(df: pd.DataFrame):
     df = df.copy()
     df['signal_value'] = df['ili_pct']
@@ -28,7 +34,6 @@ def compute_baselines(df: pd.DataFrame):
                 'season': season,
                 'baseline': np.nan
             })
-
             continue
 
         if source == 'NSSP':

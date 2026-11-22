@@ -12,7 +12,7 @@ FIG_DIR = ROOT / 'reports' / 'figures'
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 print("1. Đang tải dữ liệu từ tầng warehouse")
-df_week = load_flu_week()
+df_week = mask_sparse_ili(load_flu_week())
 dim_state = load_dim_state()
 
 print("2. Tính toán baseline, tuần khởi phát, tuần đỉnh và giai đoạn mùa")
