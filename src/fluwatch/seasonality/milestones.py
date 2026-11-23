@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 
+# severity = dinh rate_flu (NHSN). NHSN du 51 bang tu 2020-21 (mua bi loai); 2019-20 chi 8 bang -> chi tinh tu mua nay
+SEVERITY_FIRST_SEASON = '2021-22'
+
 
 def mask_sparse_ili(df: pd.DataFrame, max_missing_ratio=0.3):
     df = df.copy()
@@ -17,7 +20,7 @@ def prepare_signal(df: pd.DataFrame, max_missing_ratio=0.3):
     df.loc[has_ili, 'signal_value'] = df.loc[has_ili, 'ili_pct']
     df.loc[has_ili, 'source'] = 'ili'
 
-    has_nssp = (~has_ili) & df.groupby(['state', 'season'])['ed_pct_flu'].transform(lambda s: s.notna().any() and s.isna().mean() <= max_missing_ration)
+    has_nssp = (~has_ili) & df.groupby(['state', 'season'])['ed_pct_flu'].transform(lambda s: s.notna().any() and s.isna().mean() <= max_missing_ratio)
     df.loc[has_nssp, 'signal_value'] = df.loc[has_nssp, 'ed_pct_flu']
     df.loc[has_nssp, 'source'] = 'nssp'
 
@@ -92,7 +95,8 @@ def detect_season_milestones(df: pd.DataFrame):
             peak_value = np.nan
             peak_week = np.nan
 
-        severity = grp['rate_flu'].max() if is_completed and grp['rate_flu'].notna().any() else np.nan
+        has_nhsn = season >= SEVERITY_FIRST_SEASON and grp['rate_flu'].notna().any()
+        severity = grp['rate_flu'].max() if is_completed and has_nhsn else np.nan
 
         phases = []
         for week in weeks:
@@ -110,9 +114,10 @@ def detect_season_milestones(df: pd.DataFrame):
                 phases.append("dang_giam")
 
         grp['season_phase'] = phases
-        grp['ili_anomaly'] = (grp['ili_pct'] - grp['baseline']).round(4)
+        # ILI tru muc nen (khac ili_anomaly cua TV4 = ILI tru trung binh cung tuan qua cac nam)
+        grp['ili_tren_muc_nen'] = (grp['ili_pct'] - grp['baseline']).round(4)
 
-        phase_frames.append(grp[['state', 'week', 'epiweek', 'season', 'season_week', 'baseline', 'ili_anomaly', 'season_phase']])
+        phase_frames.append(grp[['state', 'week', 'epiweek', 'season', 'season_week', 'baseline', 'ili_tren_muc_nen', 'season_phase']])
 
         summary_rows.append({
             'state': state,
