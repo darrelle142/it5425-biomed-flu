@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pathlib import Path
+from scipy.stats import gaussian_kde
 from scipy.cluster.hierarchy import dendrogram
 from statsmodels.graphics.tsaplots import plot_acf
 
@@ -71,7 +72,7 @@ def plot_severity_boxplot(milestones: pd.DataFrame, output_dir: Path):
 
     fig, ax = plt.subplots(figsize=(11, 5))
     sub = milestones[~milestones['season'].isin(EXCLUDE_SEASON + ['2026-27'])].copy()
-    sub = sub[sub['signal_source'] == 'ILINet'].sort_values('season')
+    sub = sub[sub['source'] == 'ili'].sort_values('season')
 
     sns.boxplot(data=sub, x='season', y='peak_value', color='#56B4E9', ax=ax, fliersize=3)
     ax.set_title("Seasonal peak % ILI varies substantially across years with higher medians in recent seasons")
@@ -87,7 +88,7 @@ def plot_severity_boxplot(milestones: pd.DataFrame, output_dir: Path):
 def plot_onset_distribution(milestones: pd.DataFrame, output_dir: Path):
     setup_style()
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(12, 5))
     sub = milestones[(~milestones['season'].isin(EXCLUDE_SEASON + ['2026-27'])) & (milestones['onset_week'].notna())]
 
     ax.hist(sub['onset_week'], bins=20, color='#0072B2', edgecolor='white', alpha=0.85)
@@ -100,6 +101,43 @@ def plot_onset_distribution(milestones: pd.DataFrame, output_dir: Path):
 
     plt.tight_layout()
     fig.savefig(output_dir / 'onset_histogram.png')
+    plt.close(fig)
+
+def plot_onset_ridgeline(milstones: pd.DataFrame, output_dir: Path):
+    setup_style()
+
+    fig, ax = plt.subplots(figsize=(10, 7))
+    sub = milstones[(~milstones['season'].isin(EXCLUDE_SEASON + ['2026-27'])) & (milstones['onset_week'].notna())]
+
+    x_grid = np.linspace(1, 35, 300)
+    overlap = 0.65
+
+    for idx, season in enumerate(sorted(sub['season'].unique(), reverse=True)):
+        vals = sub[sub['season'] == season]['onset_week'].values
+        if len(vals) < 3 or np.std(vals) == 0:
+            continue
+
+        kde = gaussian_kde(vals, bw_method=0.45)
+        y_vals = kde(x_grid)
+        y_vals = y_vals / y_vals.max() * overlap
+        baseline_y = idx * 0.55
+
+        ax.fill_between(x_grid, baseline_y, baseline_y + y_vals, color='#0072B2', alpha=0.65, zorder=idx+1)
+        ax.plot(x_grid, baseline_y + y_vals, color='white', linewidth=1.2, zorder=idx+2)
+        ax.axhline(baseline_y, color='#BDBDBD', linewidth=0.6, zorder=idx)
+
+        med = np.median(vals)
+        ax.plot([med, med], [baseline_y, baseline_y + overlap * 0.65], color='#D55E00', linestyle='--', linewidth=1.5, zorder=idx+3)
+        ax.text(0.5, baseline_y + 0.08, season, fontweight='bold', fontsize=9, va='bottom', ha='right')
+
+    ax.set_yticks([])
+    ax.spines['left'].set_visible(False)
+    ax.set_xlim(1, 35)
+    ax.set_xlabel("Onset week (Weeks since MMWR week 40)")
+    ax.set_title("Seasonal distribution of epidemic onset weeks shifts notably across influenza seasons")
+
+    plt.tight_layout()
+    fig.savefig(output_dir / 'onset_ridgeline.png')
     plt.close(fig)
 
 def plot_lag_and_acf(df: pd.DataFrame, output_dir: Path):

@@ -26,14 +26,20 @@ state_cluster.to_parquet(DATA_DIR / 'state_cluster.parquet', index=False)
 print(f"-> Số cụm tối ưu k = {meta['best_k']}, Silhouette = {meta['silhouette_scores']}")
 
 print("4. Chạy kiểm định thống kê giữa các vùng HHS")
-stats_df = run_hhs_comparisons(season_milestones, dim_state)
+stats_df, dunn_df = run_hhs_comparisons(season_milestones, dim_state)
 stats_df.to_csv(DATA_DIR / 'hhs_kruskal_results.csv', index=False)
 print(stats_df)
+
+if not dunn_df.empty:
+    dunn_df.to_csv(DATA_DIR / 'hhs_dunn_posthoc.csv', index=False)
+    print("-> Các cặp vùng HHS khác biệt có ý nghĩa (Dunn p_adj < 0.05):")
+    print(dunn_df[dunn_df['significant_005']])
 
 print("5. Xuất các biểu đồ EDA")
 plot_season_overlay(df_week, FIG_DIR)
 plot_severity_boxplot(season_milestones, FIG_DIR)
 plot_onset_distribution(season_milestones, FIG_DIR)
+plot_onset_ridgeline(season_milestones, FIG_DIR)
 plot_lag_and_acf(df_week, FIG_DIR)
 plot_state_week_heatmap(df_week, season_milestones, FIG_DIR)
 plot_cluster_dendrogram(Z, meta['states'], FIG_DIR)
