@@ -100,6 +100,63 @@ def forest(rr, path, lag_main=None):
     plt.close(fig)
 
 
+def sim_check(summ, reps, real_pct, sim_pct, ac_real, ac_sim, path):
+    fig, axes = plt.subplots(1, 3, figsize=(13, 3.9))
+    q = np.linspace(0.01, 0.99, 99)
+    ax = axes[0]
+    ax.plot(np.quantile(real_pct, q), np.quantile(sim_pct, q), "o", ms=3, color=OKABE["blue"])
+    m = np.quantile(real_pct, 0.99)
+    ax.plot([0, m], [0, m], color=OKABE["grey"], lw=1)
+    ax.set_xlabel("ILI% thật (phân vị)")
+    ax.set_ylabel("ILI% giả lập (phân vị)")
+    ax.set_title(f"Kiểm chứng bộ giả lập: phân phối khớp;\ntự tương quan trễ 1 thật {ac_real:.2f}, giả lập {ac_sim:.2f}",
+                 fontsize=9, fontweight="normal", loc="left")
+
+    ax = axes[1]
+    cols = {"cai_hieu_ung": OKABE["blue"], "doi_chung": OKABE["orange"]}
+    names = {"cai_hieu_ung": "Cài RR 0,975", "doi_chung": "Đối chứng RR 1"}
+    r = reps[reps["ci_type"] == "cum_theo_bang"]
+    for sc, g in r.groupby("scenario"):
+        ax.hist(g["rr_hat"], bins=25, color=cols[sc], alpha=0.6, label=f"{names[sc]} (ước lượng)")
+        ax.axvline(g["rr_true"].iloc[0], color=cols[sc], lw=2, ls="--")
+    ax.set_xlabel("RR độ ẩm ước lượng lại (đường nét đứt: giá trị cài)")
+    ax.set_ylabel("Số lần mô phỏng")
+    ax.legend(frameon=False, fontsize=8)
+    ax.set_title("Ước lượng quanh đúng giá trị cài", fontsize=9, fontweight="normal", loc="left")
+
+    ax = axes[2]
+    s = summ.copy()
+    labels, vals, colors = [], [], []
+    for sc in ("cai_hieu_ung", "doi_chung"):
+        for ct, nm in (("cum_theo_bang", "KTC cụm"), ("thuong", "KTC thường")):
+            row = s[(s["scenario"] == sc) & (s["ci_type"] == ct)].iloc[0]
+            labels.append(f"{names[sc]}\n{nm}")
+            vals.append(row["coverage"] * 100)
+            colors.append(cols[sc] if ct == "cum_theo_bang" else OKABE["grey"])
+    x = np.arange(len(vals))
+    ax.bar(x, vals, color=colors, width=0.6)
+    for xi, v in zip(x, vals):
+        ax.text(xi, v + 1, f"{v:.0f}%", ha="center", fontsize=8)
+    ax.axhline(95, color="black", lw=1, ls=":")
+    ax.set_ylim(0, 105)
+    ax.set_xticks(x, labels, fontsize=7)
+    ax.set_ylabel("% lần KTC 95% chứa giá trị cài")
+    ax.set_title("Độ phủ khoảng tin cậy (mục tiêu 95%)", fontsize=9, fontweight="normal", loc="left")
+
+    pc = s[(s.scenario == "cai_hieu_ung") & (s.ci_type == "cum_theo_bang")].iloc[0]
+    nc_c = s[(s.scenario == "doi_chung") & (s.ci_type == "cum_theo_bang")].iloc[0]
+    nc_t = s[(s.scenario == "doi_chung") & (s.ci_type == "thuong")].iloc[0]
+    fig.suptitle(f"Phương pháp tìm lại hiệu ứng cài sẵn ở {pc.share_significant:.0%} số lần; khi không có hiệu ứng, "
+                 f"KTC cụm báo nhầm {nc_c.share_significant:.0%}, KTC thường {nc_t.share_significant:.0%}",
+                 fontsize=11, fontweight="bold", x=0.01, ha="left", y=1.04)
+    fig.text(0.01, -0.06, "DỮ LIỆU GIẢ LẬP, chỉ để kiểm tra phương pháp, không dùng làm bằng chứng. Biến giải thích, hiệu ứng "
+             "cố định và số bệnh nhân thật; số ca ILI sinh từ Poisson-lognormal có tự tương quan AR(1) theo bang-mùa.",
+             fontsize=8, color=OKABE["grey"])
+    fig.tight_layout()
+    fig.savefig(path)
+    plt.close(fig)
+
+
 def shaman(summary, t_null, path):
     fig, ax = plt.subplots(figsize=(8, 3.6))
     ax.hist(t_null, bins=60, color=OKABE["grey"], alpha=0.7, label="Khởi phát ngẫu nhiên (giả thuyết 0)")
