@@ -12,9 +12,19 @@ tags:
 size_categories:
   - 10K<n<100K
 configs:
+  - config_name: fact_flu_week
+    data_files: business/fact_flu_week.parquet
+    default: true
+  - config_name: fact_season_summary
+    data_files: business/fact_season_summary.parquet
+  - config_name: dim_state
+    data_files: business/dim_state.parquet
+  - config_name: dim_time
+    data_files: business/dim_time.parquet
+  - config_name: dim_source
+    data_files: business/dim_source.parquet
   - config_name: state_week
     data_files: samples/state_week_sample.csv.gz
-    default: true
   - config_name: cdc_level_state_week
     data_files: samples/cdc_level_state_week.csv.gz
   - config_name: wval_state_week
@@ -39,29 +49,35 @@ Dữ liệu giám sát cúm mùa theo bang × tuần MMWR ở Mỹ (50 bang + DC
 
 *US state × MMWR-week influenza surveillance data (ILINet, NHSN, NSSP, wastewater, weather, PM2.5, vaccination, population), raw snapshots plus joined tables.*
 
-Bản chụp đầu tiên 01–04/11/2026, cập nhật hằng tuần (mới nhất 09/11/2026: Delphi và WVAL đến tuần 31/10/2026; thời tiết đến 31/10/2026). Mọi bảng trong `samples/` dùng định nghĩa và ngưỡng **tạm** của nhóm. Đây là bảng thử, chưa phải bản phát hành cuối.
+Bản chụp đầu tiên 01–04/11/2026, cập nhật hằng tuần bằng GitHub Actions (mới nhất 14/11/2026, tag `v2026-11-14`: Delphi, nước thải và thời tiết đến tuần kết thúc 07/11/2026). Mọi bảng trong `samples/` dùng định nghĩa và ngưỡng **tạm** của nhóm. Đây là bảng thử, chưa phải bản phát hành cuối.
 
 ## Cấu trúc
 
 ```
 raw/<nguồn>/<YYYY-MM-DD>/   dữ liệu gốc, lưu nguyên trạng (ngày = ngày tải)
 raw/manifest.jsonl          nguồn gốc từng file: url, thời điểm tải, kích thước, sha256, mã HTTP
-                            ("manual" = nhóm tải tay bằng trình duyệt)
+                            ("manual" = nhóm tải tay bằng trình duyệt; "runner" = máy tải,
+                            "github-actions" khi tải tự động)
 raw/blocked_<ngày>.json     các URL script không tải được (HTTP 403)
 reference/                  bảng tra cứu: ngưỡng mức độ CDC, thành phố đo thời tiết, tuần nghỉ lễ
-samples/                    bảng đã ghép và làm sạch thử
+clean/                      mỗi nguồn một bảng Parquet đã chuẩn hóa (TV2; _clean_log.json ghi mọi thao tác làm sạch)
+business/                   kho dữ liệu star schema (TV2): fact_flu_week, fact_season_summary, dim_state, dim_time,
+                            dim_source, fluwatch.duckdb; kèm file kết quả của TV3–TV5 khi có
+samples/                    bảng thử ban đầu (đến 16/11/2026); dùng business/ thay thế
 ```
+
+`clean/` và `business/` được dựng lại mỗi tuần bằng `pipelines/02_warehouse.py` trên GitHub Actions, chỉ đẩy lên khi 28 quy tắc chất lượng không có lỗi. Tên cột và lineage: `docs/tu_dien_du_lieu.md` trong repo GitHub. Đọc trong Python: `pip install -e .` rồi `from fluwatch.warehouse.load import load_flu_week`, hoặc `pd.read_parquet("hf://datasets/DragonBornRay/FluDataset/business/fact_flu_week.parquet")`.
 
 ## Nguồn dữ liệu
 
 | Thư mục `raw/` | Nguồn | Cách lấy | Đơn vị |
 | --- | --- | --- | --- |
 | `fluview_ilinet`, `nhsn`, `nssp`, `fluview_resp_lab_clinical`, `flusurv`, `nwss`, `delphi_meta` | CDC qua [Delphi Epidata API V5](https://cmu-delphi.github.io/delphi-epidata/api/v5.html) | Script, gồm cả lịch sử phiên bản (`archive__*`) | Bang × tuần; NWSS theo điểm lấy mẫu |
-| `cdc_wastewater_wval` | CDC NWSS – Wastewater Viral Activity Level | Tải tay | Điểm lấy mẫu × tuần |
-| `cdc_fluvax_coverage` | CDC FluVaxView – Influenza Vaccination Coverage, 6+ months | Tải tay | Bang × mùa × tháng |
-| `cdc_nhsn_hrd` | CDC NHSN – Hospital Respiratory Data | Tải tay | Bang × tuần |
-| `cdc_nhsn_levels` | CDC NHSN – Admission Levels and Rates | Tải tay | Bang × tuần |
-| `cdc_methods` | Trang phương pháp HRD của CDC (bảng ngưỡng mức độ) | Script | – |
+| `cdc_wastewater_wval` | CDC NWSS – Wastewater Viral Activity Level (data.cdc.gov `atcp-73re`) | Bản 01/11 tải tay; từ 10/11 tự động qua GitHub Actions | Điểm lấy mẫu × tuần |
+| `cdc_fluvax_coverage` | CDC FluVaxView – Influenza Vaccination Coverage, 6+ months (data.cdc.gov `vh55-3he6`) | Bản 01/11 tải tay; từ 10/11 tự động qua GitHub Actions | Bang × mùa × tháng |
+| `cdc_nhsn_hrd` | CDC NHSN – Hospital Respiratory Data | Tải tay một lần, để kiểm chứng (số liệu chính lấy qua Delphi) | Bang × tuần |
+| `cdc_nhsn_levels` | CDC NHSN – Admission Levels and Rates | Tải tay một lần, để kiểm chứng (mức độ tự tính từ ngưỡng) | Bang × tuần |
+| `cdc_methods` | Trang phương pháp HRD của CDC (bảng ngưỡng mức độ) | Script; tự động qua GitHub Actions | – |
 | `fluvaxview_pages` | Các trang FluVaxView theo mùa | Script | – |
 | `census_popest_state`, `census_popest_places` | US Census Bureau, Vintage 2025 | Tải tay | Bang, đô thị × năm |
 | `census_gazetteer` | US Census Bureau, Gazetteer 2024 (places) | Tải tay | Tọa độ đô thị |
@@ -96,6 +112,11 @@ samples/                    bảng đã ghép và làm sạch thử
 - Các tín hiệu NHSN, NSSP và ILINet bị sửa về sau ở khoảng 2/3 số điểm dữ liệu. Bảng `samples/` dùng bản mới nhất, không phải bản lúc công bố.
 - `weather_state_week` có cột `n_cities` cho biết số thành phố thực có trong tuần đó. DC, HI và RI chỉ có 1 đô thị theo quy tắc chọn.
 - Các file tải tay chỉ là bản chụp, không có lịch sử phiên bản.
+- ILINet thiếu FL từ 2010 đến 2021, LA từ 2010 đến 2016.
+- Cột thời tiết trong `state_week_sample` chỉ lấy thành phố lớn nhất mỗi bang; dùng `weather_state_week` (3–5 thành phố) cho phân tích.
+- `epa_pm25_state_week` có PR và 8 tuần trung bình âm (MT, 2026); `wval_state_week` có GU, VI. Cần lọc về 50 bang + DC và đặt giá trị âm thành thiếu.
+- `vaccine_state_season` trống ở MS mùa 2025–26, DC và NJ mùa 2018–19 (nguồn CDC không có), CA mùa 2013–14 (tháng 5 là "NR").
+- Chi tiết và cách xử lý: `docs/han_che_du_lieu.md` trong repo GitHub của nhóm.
 
 ## Giấy phép và trích dẫn
 
