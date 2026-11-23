@@ -53,7 +53,9 @@ TIMEOUT = {"download": 20, "verify": 10, "delphi": 25, "weather": 15, "build": 2
 # Phan tich cua TV3-TV5 cung la buoc mem: loi thi kho van duoc day len, file ket qua cu giu nguyen tren HF.
 SOFT = {"weather", "analysis"}
 # pipelines/02-05 import fluwatch.*: them src/ vao duong dan de chay duoc ca khi chua `pip install -e .`
-ENV = {**os.environ, "PYTHONPATH": os.pathsep.join(filter(None, [str(ROOT / "src"), os.environ.get("PYTHONPATH")]))}
+# PYTHONIOENCODING: cac pipeline in tieng Viet; console Windows bang ma cu (cp1252...) se loi UnicodeEncodeError
+ENV = {**os.environ, "PYTHONPATH": os.pathsep.join(filter(None, [str(ROOT / "src"), os.environ.get("PYTHONPATH")])),
+       "PYTHONIOENCODING": "utf-8"}
 
 
 def run(cmd, minutes):
