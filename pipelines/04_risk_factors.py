@@ -72,4 +72,33 @@ if ms_path.exists():
 else:
     print("   chua co season_milestones.parquet (TV3) -> bo qua")
 
+if "--sim" in sys.argv:
+    import numpy as np
+
+    from fluwatch.risk_factors import sim_check
+
+    print("5. Kiem tra phuong phap bang du lieu gia lap (Q15; khoang 10 phut)")
+    summ, reps, params, example, d, cal = sim_check.run(
+        sample, progress=lambda sc, i: print(f"   {sc} {i + 1}/{sim_check.N_REP}", flush=True) if (i + 1) % 20 == 0 else None)
+    summ.to_csv(OUT / "kiem_tra_phuong_phap.csv", index=False)
+    reps.to_csv(OUT / "kiem_tra_phuong_phap_tung_lan.csv", index=False)
+    (OUT / "kiem_tra_phuong_phap_tham_so.json").write_text(
+        json.dumps({k: (float(v) if isinstance(v, (int, float, np.floating)) else v) for k, v in params.items()},
+                   indent=2, ensure_ascii=False))
+    SANDBOX = ROOT / "data" / "sandbox"
+    SANDBOX.mkdir(parents=True, exist_ok=True)
+    example.to_parquet(SANDBOX / f"sim_ah_cai_hieu_ung_seed{sim_check.SEED}.parquet", index=False)
+    print(summ.round(4).to_string(index=False))
+    g = d.groupby(["state", "season"]).ngroup()
+    real_pct = d["y"] / d["num_patients"] * 100
+    sim_pct = example["y"] / example["num_patients"] * 100
+
+    def _ac(v):
+        v = pd.Series(np.log(np.asarray(v, dtype=float) + 0.01))
+        return float(pd.concat([v, v.groupby(g).shift(1)], axis=1).dropna().corr().iloc[0, 1])
+
+    plots.sim_check(summ, reps, real_pct, sim_pct, _ac(real_pct), _ac(sim_pct), FIG / "tv4_kiem_tra_phuong_phap.png")
+else:
+    print("5. Bo qua kiem tra phuong phap bang gia lap (them --sim de chay, khoang 10 phut)")
+
 print("Hoan tat pipeline 04_risk_factors")
