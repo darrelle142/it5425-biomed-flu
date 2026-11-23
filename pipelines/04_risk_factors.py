@@ -2,7 +2,8 @@
 
 Chay: python pipelines/04_risk_factors.py
 Doc: data/business/ (load_flu_week cua TV2), data/business/season_milestones.parquet (TV3, cho Shaman).
-Ghi: data/business/risk_rate_ratios.csv (hop dong ke_hoach.md muc 4.2), reports/tv4/*.csv|json,
+Ghi: data/business/risk_rate_ratios.csv, data/business/whatif.parquet (hop dong ke_hoach.md muc 4.2),
+     reports/tv4/*.csv|json (gom bang_bang_chung.csv),
      reports/figures/tv4_*.png. Khong sua data/raw/.
 """
 import json
@@ -14,7 +15,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import pandas as pd
 
-from fluwatch.risk_factors import data, lag_corr, nb_model, plots, shaman
+from fluwatch.risk_factors import data, evidence, lag_corr, nb_model, plots, shaman, whatif
 
 BUSINESS = ROOT / "data" / "business"
 OUT = ROOT / "reports" / "tv4"
@@ -45,6 +46,16 @@ print(rr.round(4).to_string(index=False))
 print(fits.round(3).to_string(index=False))
 # vaccine, nghi le khong tre: ve tu mo hinh do tre 0 (chot truoc, khong chon theo AIC sau khi xem ket qua)
 plots.forest(rr, FIG / "tv4_forest_rate_ratio.png", lag_main=0)
+
+print("3b. What-if do phu vaccine +10 diem % (gia lap, is_synthetic = 1)")
+wi = whatif.build(sample, rr)
+wi.to_parquet(BUSINESS / "whatif.parquet", index=False)
+print(f"   {len(wi)} dong, {wi.state.nunique()} bang, mua {whatif.SEASON}, RR dung = {wi.rr_used.iloc[0]:.3f}")
+
+print("3c. Bang bang chung tang 2 + ket qua nhom")
+ev = evidence.table(rr, lc)
+ev.to_csv(OUT / "bang_bang_chung.csv", index=False)
+print(ev[["yeu_to", "ket_qua_nhom"]].to_string(index=False))
 
 print("4. Kiem chung Shaman 2010 (BAN TAM)")
 ms_path = BUSINESS / "season_milestones.parquet"
