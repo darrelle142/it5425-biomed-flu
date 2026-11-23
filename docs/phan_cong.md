@@ -33,7 +33,6 @@ reports/figures/  reports/chapters/              hình và chương báo cáo (M
 "Chào bạn, bạn phụ trách **thu thập toàn bộ dữ liệu thô**, biến việc thu thập thành **server tự động** và **bảo toàn dữ liệu thô** theo góp ý của thầy. Phần kỹ thuật đã xong và chạy thật; việc còn lại là cho lịch tự chạy hoạt động, ghép quyển báo cáo và viết chương của mình.
 
 • Đã hoàn thành (kiểm chứng trên `main` và Hugging Face ngày 14/11/2026):
-
 1. Thu thập đủ 9 nguồn của kế hoạch v2: ILINet, NHSN, NSSP, xét nghiệm, FluSurv, NWSS qua Delphi API (cả lịch sử sửa số để backtest); thời tiết và PM2.5 của 236 thành phố (Open-Meteo); EPA PM2.5 2010–2026; nước thải WVAL, vaccine, NHSN, Census. **Số liệu trên Hugging Face đến tuần kết thúc 07/11/2026.**
 2. Lưu trữ: `data/raw/<nguồn>/<ngày tải>/` nguyên trạng, `raw/manifest.jsonl` ghi URL, thời điểm, sha256, máy tải; repo chung `DragonBornRay/FluDataset`, tải bằng `scripts/download_data.py`.
 3. Bảng tra cứu `data/reference/` và bảng thử `data/samples/`; `scripts/audit_data.py` (kèm `--strict` làm cổng chất lượng).
@@ -42,7 +41,6 @@ reports/figures/  reports/chapters/              hình và chương báo cáo (M
 6. Khung code `src/fluwatch/` cho cả 6 người và `pyproject.toml`; tách code thu thập thành module trong `src/fluwatch/ingest/`.
 
 • Việc còn lại:
-
 1. **Lịch tự chạy chưa kích hoạt lần nào** (đến 14/11 chưa có lần chạy nào với sự kiện `schedule`; các lần chạy đều bấm tay). Vào tab Actions kiểm tra workflow có bị tắt không; đổi phút trong `cron` sang số lẻ (ví dụ `17 3 * * 6`, `17 6 * * 6`) vì GitHub hay bỏ lịch đặt đúng phút :00; theo dõi lần chạy thứ Bảy 21/11.
 2. Ghép quyển báo cáo tổng: dựng khuôn (LaTeX hoặc Word) trong `reports/`, gộp các chương, mục lục, tài liệu tham khảo. Hạn: có khuôn trước tối 15/11 để mọi người viết vào.
 3. Chạy thử toàn bộ pipeline từ máy trống theo README để chắc người khác dựng lại được.
@@ -59,7 +57,6 @@ reports/figures/  reports/chapters/              hình và chương báo cáo (M
 • Đầu vào: `data/raw/` và `data/reference/` (tải bằng `python scripts/download_data.py`); kế hoạch v2 mục 5–6.
 
 • Việc cần làm:
-
 1. Vùng `data/clean/`: mỗi nguồn một bảng Parquet đã chuẩn hóa (mã bang 2 chữ, tuần MMWR, `season`, `season_week`, đơn vị), lọc GU/VI/PR, PM2.5 âm đặt thành thiếu và ghi log, lấy thời tiết từ bản 3–5 thành phố, vaccine lấy tháng cuối có số.
 2. Vùng `data/business/` theo star schema: `dim_state` (vùng HHS, dân số, cờ 48 bang lục địa, `cluster_id` để TV3 điền), `dim_time`, `dim_source`, `fact_flu_week` (đủ cột trong từ điển dữ liệu: `ah_anomaly`, biến trễ, `wow_pct`, `yoy_pct`, `is_preliminary`, `missing_*`), `fact_season_summary` (vaccine + chỗ trống cho mốc mùa của TV3); một file DuckDB để truy vấn roll-up, drill-down, slice, dice, pivot.
 3. Bảng quy tắc chất lượng 4 mức (giá trị, bản ghi, quan hệ, nhiều bảng) chạy tự động, xuất báo cáo dạng Markdown (HTML là mở rộng); báo cáo độ phủ bang × năm (cờ thiếu > 30%), kiểm tra khóa, kiểm tra tổng các bang so với toàn quốc.
@@ -79,7 +76,6 @@ reports/figures/  reports/chapters/              hình và chương báo cáo (M
 • Đầu vào: `load_flu_week()`, `load_dim_state()`, `load_dim_time()` của TV2 (đọc `samples/` đến 16/11, `business/` từ 17/11). Giao: stub 3 file 15/11, `season_milestones` + `season_phase` thật 17/11, `state_cluster` thật 18/11 (tên cột: [ke_hoach.md](ke_hoach.md) mục 4.2).
 
 • Việc cần làm:
-
 1. Mốc mùa theo định nghĩa thống nhất: mức nền kiểu CDC (tuần không có cúm của 3 mùa trước, + 2 độ lệch chuẩn, bỏ mùa 2020-21), tuần khởi phát (3 tuần liên tiếp ≥ mức nền), tuần đỉnh, giá trị đỉnh, `season_phase`. 8 bang thiếu ILINet mùa 2025-26 dùng NSSP. Ghi vào `fact_season_summary`.
 2. EDA: chồng các mùa theo `season_week`, boxplot độ nặng theo mùa, ridgeline tuần khởi phát, lag plot và ACF chuỗi ILI, heatmap bang × tuần sắp theo tuần khởi phát.
 3. Phân cụm bang theo hình dạng đường cong (z-score theo `season_week`): hierarchical (Ward) và k-means, chọn k bằng silhouette, vẽ dendrogram; ghi `cluster_id` vào `dim_state`.
@@ -96,7 +92,6 @@ reports/figures/  reports/chapters/              hình và chương báo cáo (M
 • Đầu vào: `load_flu_week()` (có sẵn cột `ah_anomaly`), `load_season_summary()`, mốc mùa của TV3 (stub 15/11, thật 17/11); 6 bài báo ở kế hoạch v2 mục 8. Giao: stub `risk_rate_ratios.csv`, `whatif.parquet` 15/11, bản thật 18/11 (tên cột: [ke_hoach.md](ke_hoach.md) mục 4.2).
 
 • Việc cần làm:
-
 1. Bảng bằng chứng tầng 2: với mỗi yếu tố ghi chiều tác động, độ trễ, độ lớn hiệu ứng từ bài báo (Shaman 2009/2010, Croft 2019, medRxiv 2025, nghiên cứu nước thải, Úc 2019).
 2. Dữ liệu giả lập trong `data/sandbox/`, chỉ dùng cho những việc dữ liệu thật không làm được (dữ liệu thật đã crawl đủ nên không cần giả lập để dựng dashboard): (a) các kịch bản cài sẵn hiệu ứng có độ lớn lấy từ bài báo để kiểm tra phương pháp có tìm lại được hiệu ứng không, và phân tích cỡ mẫu (làm 1 kịch bản; đường power đầy đủ là mở rộng); (b) bộ dữ liệu bị chèn lỗi có đáp án (thiếu ngẫu nhiên, mất khối, trùng dòng, số sơ bộ bị sửa) để TV2 kiểm tra pipeline. (c) kịch bản what-if cho trang Cảnh báo của dashboard: độ phủ vaccine tăng 10 điểm phần trăm (kịch bản "mùa đông khô bất thường" là mở rộng). Kiểm chứng phân phối giả lập so với thật bằng biểu đồ.
 3. Tương quan chéo theo độ trễ 0–4 tuần giữa từng yếu tố (đã loại mùa vụ, dùng `ah_anomaly`) và ILI; kiểm chứng Shaman 2010 bằng permutation test trên 48 bang lục địa + DC.
@@ -113,7 +108,6 @@ reports/figures/  reports/chapters/              hình và chương báo cáo (M
 • Đầu vào: `load_flu_week()` (nhãn mức CDC `cdc_level`, ILI, NSSP, nước thải), mốc mùa của TV3 (stub 15/11, thật 17/11), các file lịch sử sửa số `raw/*/archive__*` để backtest đúng như lúc công bố; dữ liệu giả lập của TV4. Giao: stub `alert_forecast.parquet`, `model_eval.json` + `roc_points.csv` 15/11, bản thật 18/11 (tên cột: [ke_hoach.md](ke_hoach.md) mục 4.2).
 
 • Việc cần làm:
-
 1. Nhãn và dữ liệu huấn luyện: `alert_level`, `y_exceed_1w`, `y_exceed_2w`, `y_onset_next2w`. Sinh lịch sử nhập viện giả lập 2010–2023 (Negative Binomial ILI → nhập viện theo bang trên 2 mùa NHSN, bỏ 2020-21, kèm khoảng bất định), lưu trong `data/sandbox/`.
 2. Mô hình: logistic dự đoán khởi phát (ILINet nhiều mùa) và vượt ngưỡng (huấn luyện trên giả lập + 2024-25, test trên mùa thật 2025-26); so với mô hình nền (persistence); xuất `prob_exceed` (xác suất vượt ngưỡng 1 và 2 tuần tới) và xác suất khởi phát; *(mở rộng)* dự báo dạng quạt `pred_1w`…`pred_4w`, `pred_lo`, `pred_hi`.
 3. Đánh giá: ROC và AUC (khoảng tin cậy bootstrap), PR curve, DeLong test so mô hình có/không có nước thải và cấp cứu, calibration curve + Brier score + Hosmer-Lemeshow, chọn ngưỡng bằng Youden's J; backtest theo từng tuần mùa 2025-26 dùng số liệu đúng như lúc công bố.
@@ -130,7 +124,6 @@ reports/figures/  reports/chapters/              hình và chương báo cáo (M
 • Đầu vào: `load_flu_week()`, `load_dim_state()` của TV2; file kết quả của TV3, TV4, TV5 (stub từ 15/11, thật từ 17–18/11, tên cột: [ke_hoach.md](ke_hoach.md) mục 4.2); kế hoạch v2 mục 9.2–9.3.
 
 • Việc cần làm:
-
 1. Ứng dụng Streamlit `src/fluwatch/dashboard/app.py` đọc thẳng Parquet từ Hugging Face (tự cập nhật khi server của TV1 chạy). 15/11: khung 5 trang + Phương pháp trên `load_flu_week()` và file stub; 18/11 thay stub bằng file thật (cùng tên, không phải sửa code).
 2. Năm trang và trang Phương pháp:
    - Tình hình hiện tại: thẻ KPI, nhãn giai đoạn mùa, đèn cảnh báo (màu + biểu tượng + chữ), tile map 51 bang.
