@@ -8,14 +8,18 @@ def mask_sparse_ili(df: pd.DataFrame, max_missing_ratio=0.3):
     df.loc[missing_ratio > max_missing_ratio, 'ili_pct'] = np.nan
     return df
 
-def prepare_signal(df: pd.DataFrame):
-    df = df.copy()
-    df['signal_value'] = df['ili_pct']
-    df['signal_source'] = 'ILINet'
+def prepare_signal(df: pd.DataFrame, max_missing_ratio=0.3):
+    df = mask_sparse_ili(df, max_missing_ratio=max_missing_ratio)
+    df['signal_value'] = np.nan
+    df['source'] = pd.Series(np.nan, index=df.index, dtype='object')
 
-    missing_mask = df.groupby(['state', 'season'])['ili_pct'].transform(lambda s: s.isna().all())
-    df.loc[missing_mask, 'signal_value'] = df.loc[missing_mask, 'ed_pct_flu']
-    df.loc[missing_mask, 'signal_source'] = 'NSSP'
+    has_ili = df.groupby(['state', 'season'])['ili_pct'].transform(lambda s: s.notna().any())
+    df.loc[has_ili, 'signal_value'] = df.loc[has_ili, 'ili_pct']
+    df.loc[has_ili, 'source'] = 'ili'
+
+    has_nssp = (~has_ili) & df.groupby(['state', 'season'])['ed_pct_flu'].transform(lambda s: s.notna().any() and s.isna().mean() <= max_missing_ration)
+    df.loc[has_nssp, 'signal_value'] = df.loc[has_nssp, 'ed_pct_flu']
+    df.loc[has_nssp, 'source'] = 'nssp'
 
     return df
 
@@ -26,9 +30,9 @@ def compute_baselines(df: pd.DataFrame):
 
     records = []
     for (state, season), grp in df.groupby(['state', 'season'], sort=False):
-        source = grp['signal_source'].iloc[0]
+        source = grp['source'].iloc[0]
 
-        if season in ('2009-10', '2020-21'):
+        if season in ('2009-10', '2020-21') or pd.isna(source):
             records.append({
                 'state': state,
                 'season': season,
@@ -36,28 +40,24 @@ def compute_baselines(df: pd.DataFrame):
             })
             continue
 
-        if source == 'NSSP':
-            sub = df[(df['state'] == state) & (df['season'] != '2020-21') & off_mask]['ed_pct_flu'].dropna()
-        else:
-            prev_candidates = [s for s in seasons if s < season and s not in ('2009-10', '2020-21')]
-            valid_prev_seasons = []
-            for ps in reversed(prev_candidates):
-                s_vals = df[(df['state'] == state) & (df['season'] == ps) & off_mask]['ili_pct'].dropna()
-                if len(s_vals) > 5:
-                    valid_prev_seasons.append(ps)
-                if len(valid_prev_seasons) == 3:
-                    break
+        prev_candidates = [s for s in seasons if s < season and s not in ('2009-10', '2020-21')]
+        val_col = 'ili_pct' if source == 'ili' else 'ed_pct_flu'
 
-            sub = df[(df['state'] == state) & (df['season'].isin(valid_prev_seasons) & off_mask)]['ili_pct'].dropna()
-            if len(sub) < 10:
-                sub = df[(df['state'] == state) & (~df['season'].isin(['2009-10', '2020-21', '2026-27'])) & off_mask]['ili_pct'].dropna()
+        valid_prev_seasons = []
+        for ps in reversed(prev_candidates):
+            s_vals = df[(df['state'] == state) & (df['season'] == ps) & off_mask][val_col].dropna()
+            if len(s_vals) > 5:
+                valid_prev_seasons.append(ps)
+            if len(valid_prev_seasons) == 3:
+                break
 
-        baseline = sub.mean() + 2 * sub.std(ddof=1) if len(sub) > 3 else np.nan
+        sub = df[(df['state'] == state) & (df['season'].isin(valid_prev_seasons)) & off_mask][val_col].dropna()
+        baseline = sub.mean() + 2 * sub.std(ddof=1) if len(valid_prev_seasons) > 0 else np.nan
         records.append({
             'state': state,
             'season': season,
             'baseline': baseline
-        }) 
+        })
 
     return pd.DataFrame(records)
 
@@ -73,6 +73,7 @@ def detect_season_milestones(df: pd.DataFrame):
         values = grp['signal_value'].values
         weeks = grp['season_week'].values
         baseline = grp['baseline'].iloc[0]
+        source = grp['source'].iloc[0]
 
         onset_week = np.nan
         if not np.isnan(baseline):
@@ -82,7 +83,8 @@ def detect_season_milestones(df: pd.DataFrame):
                     onset_week = weeks[i]
                     break
 
-        if season != '2026-27' and grp['signal_value'].notna().any():
+        is_completed = season not in ('2009-10', '2020-21', '2026-27')
+        if is_completed and grp['signal_value'].notna().any():
             peak_idx = grp['signal_value'].idxmax()
             peak_value = grp.loc[peak_idx, 'signal_value']
             peak_week = grp.loc[peak_idx, 'season_week']
@@ -90,30 +92,37 @@ def detect_season_milestones(df: pd.DataFrame):
             peak_value = np.nan
             peak_week = np.nan
 
+        severity = grp['rate_flu'].max() if is_completed and grp['rate_flu'].notna().any() else np.nan
+
         phases = []
         for week in weeks:
-            if np.isnan(onset_week) or week < onset_week:
-                phases.append("Not started")
+            if np.isnan(baseline):
+                phases.append(np.nan)
+            elif np.isnan(onset_week) or week < onset_week:
+                phases.append("chua_bat_dau")
             elif season == '2026-27':
-                phases.append("Rising")
+                phases.append("dang_len")
             elif not np.isnan(peak_week) and week == peak_week:
-                phases.append("Peak")
+                phases.append("dinh")
             elif not np.isnan(peak_week) and week < peak_week:
-                phases.append("Rising")
+                phases.append("dang_len")
             else:
-                phases.append("Declining")
+                phases.append("dang_giam")
 
         grp['season_phase'] = phases
-        phase_frames.append(grp[['state', 'epiweek', 'season', 'season_week', 'baseline', 'season_phase']])
+        grp['ili_anomaly'] = (grp['ili_pct'] - grp['baseline']).round(4)
+
+        phase_frames.append(grp[['state', 'week', 'epiweek', 'season', 'season_week', 'baseline', 'ili_anomaly', 'season_phase']])
 
         summary_rows.append({
             'state': state,
             'season': season,
-            'signal_source': grp['signal_source'].iloc[0],
+            'source': source,
             'baseline': round(baseline, 4) if not np.isnan(baseline) else np.nan,
             'onset_week': onset_week,
+            'peak_week': peak_week,
             'peak_value': round(peak_value, 4) if not np.isnan(peak_value) else np.nan,
-            'peak_week': peak_week
+            'severity': round(severity, 4) if not np.isnan(severity) else np.nan
         })
 
     season_milestones = pd.DataFrame(summary_rows)
