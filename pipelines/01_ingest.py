@@ -17,6 +17,9 @@ Cac buoc (theo thu tu):
     warehouse pipelines/02_warehouse.py --strict       kho clean/, business/ cua TV2 + 28 quy tac chat luong;
               quy tac muc loi khong dat thi dung, khong day (cong chat luong thu hai)
     analysis  pipelines/03_*.py, 04_*.py, 05_*.py      ket qua cua TV3-TV5 (chi chay file da co; buoc mem)
+    merge     pipelines/02_warehouse.py --steps business olap quality --strict
+              ghep ket qua vua chay cua TV3 (moc mua, cum) vao fact_season_summary, dim_state roi kiem tra lai;
+              khong co buoc nay thi kho luon cham mot luot so voi file cua TV3
     --only-if-new: chi chay khi Delphi co so lieu moi hon ban da luu (lich tu chay dung)
     upload    scripts/upload_hf.py --tag [--derived]   chi khi co --upload; gan tag vYYYY-MM-DD; --derived khi kho
               vua duoc dung lai trong lan chay nay (day ca clean/, business/)
@@ -44,10 +47,11 @@ STEPS = {
     "audit": [[S / "audit_data.py", "--strict"]],
     "warehouse": [[P / "02_warehouse.py", "--strict"]],
     "analysis": [[f] for n in ("03", "04", "05") for f in sorted(P.glob(f"{n}_*.py"))],
+    "merge": [[P / "02_warehouse.py", "--steps", "business", "olap", "quality", "--strict"]],
 }
-DEFAULT = ["download", "verify", "delphi", "weather", "build", "audit", "warehouse", "analysis"]
+DEFAULT = ["download", "verify", "delphi", "weather", "build", "audit", "warehouse", "analysis", "merge"]
 # Gioi han thoi gian moi lenh (phut): mot nguon bi treo khong keo ca job den het gio
-TIMEOUT = {"download": 20, "verify": 10, "delphi": 25, "weather": 15, "build": 20, "audit": 5, "warehouse": 25, "analysis": 30,
+TIMEOUT = {"download": 20, "verify": 10, "delphi": 25, "weather": 15, "build": 20, "audit": 5, "warehouse": 25, "analysis": 30, "merge": 10,
            "upload": 20, "backup": 30}
 # Buoc "mem": that bai thi canh bao va chay tiep voi so lieu cu (thoi tiet chi phuc vu RQ4, khong can moi tuan)
 # Phan tich cua TV3-TV5 cung la buoc mem: loi thi kho van duoc day len, file ket qua cu giu nguyen tren HF.
@@ -109,7 +113,7 @@ def main():
     if a.upload:
         if "audit" not in steps:
             sys.exit("Chi day len khi da chay buoc audit trong cung lan chay.")
-        derived = ["--derived"] if "warehouse" in steps else []  # kho chi duoc day khi vua dung lai
+        derived = ["--derived"] if {"warehouse", "merge"} & set(steps) else []  # kho chi duoc day khi vua dung lai
         if run([S / "upload_hf.py", "-m", a.message, "--tag", *derived], TIMEOUT["upload"]) != 0:
             sys.exit("Day len Hugging Face that bai.")
         # Sao luu sang repo du phong: buoc mem, loi thi canh bao (ban chinh da len HF)

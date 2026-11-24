@@ -17,7 +17,7 @@ on:
         type: boolean
         default: false
       steps:
-        description: "Chi chay mot so buoc, cach nhau dau cach (verify delphi weather build audit); de trong = tat ca"
+        description: "Chi chay mot so buoc, cach nhau dau cach (verify delphi weather build audit warehouse analysis merge); de trong = tat ca"
         type: string
         default: ""
 
