@@ -57,14 +57,14 @@ def plot_season_overlay(df: pd.DataFrame, output_dir: Path, current_season: str 
         else:
             ax.plot(grp['season_week'], grp['ili_pct'], color='#BDBDBD', alpha=0.6, linewidth=1.2)
 
-    ax.set_title(f"National % ILI trajectory of {current_season} compared against historical seasonal patterns")
-    ax.set_xlabel("Season week (Starting from MMWR week 40)")
-    ax.set_ylabel("Mean outpatient visits for ILI (%)")
+    ax.set_title(f"ILI trung bình toàn quốc: mùa {current_season} so với các mùa trước")
+    ax.set_xlabel("Tuần trong mùa (1 = tuần MMWR 40)")
+    ax.set_ylabel("ILI trung bình các bang (%)")
     ax.set_xlim(1, 55)
     ax.grid(axis='y', linestyle='--', alpha=0.3)
 
     plt.tight_layout()
-    fig.savefig(output_dir / 'season_overlay.png')
+    fig.savefig(output_dir / 'tv3_season_overlay.png')
     plt.close(fig)
 
 def plot_severity_boxplot(milestones: pd.DataFrame, output_dir: Path):
@@ -75,14 +75,14 @@ def plot_severity_boxplot(milestones: pd.DataFrame, output_dir: Path):
     sub = sub[sub['source'] == 'ili'].sort_values('season')
 
     sns.boxplot(data=sub, x='season', y='peak_value', color='#56B4E9', ax=ax, fliersize=3)
-    ax.set_title("Seasonal peak % ILI varies substantially across years with higher medians in recent seasons")
-    ax.set_xlabel("Flu season")
-    ax.set_ylabel("Seasonal peak outpatient ILI (%)")
+    ax.set_title("Đỉnh ILI của các bang theo mùa")
+    ax.set_xlabel("Mùa cúm")
+    ax.set_ylabel("Đỉnh ILI trong mùa (%)")
     plt.xticks(rotation=30)
     ax.grid(axis='y', linestyle='--', alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(output_dir / 'severity_boxplot.png')
+    plt.savefig(output_dir / 'tv3_severity_boxplot.png')
     plt.close(fig)
 
 def plot_onset_distribution(milestones: pd.DataFrame, output_dir: Path):
@@ -94,13 +94,13 @@ def plot_onset_distribution(milestones: pd.DataFrame, output_dir: Path):
     ax.hist(sub['onset_week'], bins=20, color='#0072B2', edgecolor='white', alpha=0.85)
     median_w = sub['onset_week'].median()
     ax.axvline(median_w, color='#D55E00', linestyle='--', linewidth=2)
-    ax.text(median_w + 0.3, ax.get_ylim()[1] * 0.9, f"Median: Week {int(median_w)}", color='#D55E00', fontweight='bold')
-    ax.set_title("State-season epidemic onset timing is right-skewed and concentrated in the first half of the season")
-    ax.set_xlabel("Onset week (Weeks since MMWR week 40)")
-    ax.set_ylabel("State-Season count")
+    ax.text(median_w + 0.3, ax.get_ylim()[1] * 0.9, f"Trung vị: tuần {int(median_w)}", color='#D55E00', fontweight='bold')
+    ax.set_title("Phân bố tuần khởi phát của các bang-mùa")
+    ax.set_xlabel("Tuần khởi phát (tuần trong mùa)")
+    ax.set_ylabel("Số bang-mùa")
 
     plt.tight_layout()
-    fig.savefig(output_dir / 'onset_histogram.png')
+    fig.savefig(output_dir / 'tv3_onset_histogram.png')
     plt.close(fig)
 
 def plot_onset_ridgeline(milstones: pd.DataFrame, output_dir: Path):
@@ -133,11 +133,11 @@ def plot_onset_ridgeline(milstones: pd.DataFrame, output_dir: Path):
     ax.set_yticks([])
     ax.spines['left'].set_visible(False)
     ax.set_xlim(1, 35)
-    ax.set_xlabel("Onset week (Weeks since MMWR week 40)")
-    ax.set_title("Seasonal distribution of epidemic onset weeks shifts notably across influenza seasons")
+    ax.set_xlabel("Tuần khởi phát (tuần trong mùa)")
+    ax.set_title("Phân bố tuần khởi phát theo từng mùa (vạch đỏ: trung vị)")
 
     plt.tight_layout()
-    fig.savefig(output_dir / 'onset_ridgeline.png')
+    fig.savefig(output_dir / 'tv3_onset_ridgeline.png')
     plt.close(fig)
 
 def plot_lag_and_acf(df: pd.DataFrame, output_dir: Path):
@@ -147,17 +147,17 @@ def plot_lag_and_acf(df: pd.DataFrame, output_dir: Path):
     nat = df.groupby('epiweek')['ili_pct'].mean().dropna().sort_index()
 
     ax[0].scatter(nat.shift(1), nat, alpha=0.5, color='#0072B2', s=18)
-    ax[0].set_title("Weekly % ILI exhibits strong first-order autocorrelation")
-    ax[0].set_xlabel("Prior week % ILI (t - 1)")
-    ax[0].set_ylabel("Current week % ILI (t)")
+    ax[0].set_title("ILI tuần này so với tuần trước")
+    ax[0].set_xlabel("ILI tuần t − 1 (%)")
+    ax[0].set_ylabel("ILI tuần t (%)")
 
     plot_acf(nat, lags=20, ax=ax[1], color='#009E73')
-    ax[1].set_title("Autocorrelation function (ACF) decays gradually across multi-week lags")
-    ax[1].set_xlabel("Lag (Weeks)")
-    ax[1].set_ylabel("Autocorrelation")
+    ax[1].set_title("Hàm tự tương quan (ACF) của ILI toàn quốc")
+    ax[1].set_xlabel("Độ trễ (tuần)")
+    ax[1].set_ylabel("Tự tương quan")
 
     plt.tight_layout()
-    fig.savefig(output_dir / 'lag_acf_ili.png')
+    fig.savefig(output_dir / 'tv3_lag_acf_ili.png')
     plt.close(fig)
 
 def plot_state_week_heatmap(df: pd.DataFrame, milestones: pd.DataFrame, output_dir: Path, target_season: str = '2024-25'):
@@ -173,13 +173,13 @@ def plot_state_week_heatmap(df: pd.DataFrame, milestones: pd.DataFrame, output_d
     piv = sub.pivot(index='state_upper', columns='season_week', values='ili_pct').reindex(order)
 
     fig, ax = plt.subplots(figsize=(12, 10))
-    sns.heatmap(piv, cmap='YlOrRd', ax=ax, cbar_kws={'label': "Outpatient ILI (%)"})
-    ax.set_title(f"Ordering states by onset week in {target_season} reveals geographic spread patterns")
-    ax.set_xlabel("Season week (Starting from MMWR week 40)")
-    ax.set_ylabel("State (Ordered from earliest to latest onset)")
+    sns.heatmap(piv, cmap='YlOrRd', ax=ax, cbar_kws={'label': "ILI (%)"})
+    ax.set_title(f"ILI theo bang và tuần, mùa {target_season} (bang sắp theo tuần khởi phát)")
+    ax.set_xlabel("Tuần trong mùa (1 = tuần MMWR 40)")
+    ax.set_ylabel("Bang (khởi phát sớm → muộn)")
 
     plt.tight_layout()
-    fig.savefig(output_dir / 'heatmap_state_week.png')
+    fig.savefig(output_dir / 'tv3_heatmap_state_week.png')
     plt.close(fig)
 
 def plot_cluster_dendrogram(Z: np.ndarray, state_labels: list, output_dir: Path):
@@ -196,10 +196,72 @@ def plot_cluster_dendrogram(Z: np.ndarray, state_labels: list, output_dir: Path)
         color_threshold=0.7 * max(Z[:, 2])
     )
 
-    ax.set_title(f"Hierarchical clustering groups {len(state_labels)} jurisdictions by normalized seasonal curve shape")
-    ax.set_xlabel("State")
-    ax.set_ylabel("Ward linkage distance (Z-score normalized curves)")
+    ax.set_title(f"Phân cụm Ward {len(state_labels)} bang theo hình dạng đường cong mùa cúm")
+    ax.set_xlabel("Bang")
+    ax.set_ylabel("Khoảng cách Ward (đường cong z-score)")
 
     plt.tight_layout()
-    fig.savefig(output_dir / 'dendrogram.png')
+    fig.savefig(output_dir / 'tv3_dendrogram.png')
+    plt.close(fig)
+
+
+# ---------------- Hinh cho cac phat hien them (insights.py) ----------------
+
+def plot_signal_lead(lead: pd.DataFrame, output_dir: Path):
+    """Moi tin hieu dat nua dinh truoc nhap vien bao nhieu tuan (trung binh, ty le bang-mua di truoc)."""
+    setup_style()
+    d = lead.sort_values('lead_mean')
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.barh(d['ten'], d['lead_mean'], color='#0072B2')
+    for y, (m, s) in enumerate(zip(d['lead_mean'], d['share_earlier'])):
+        ax.text(m + 0.05, y, f"{m:.1f} tuần, {s:.0%} bang-mùa đi trước", va='center', fontsize=9)
+    ax.axvline(0, color='#555555', linewidth=0.8)
+    ax.set_xlabel("Đạt nửa đỉnh trước nhập viện (tuần, trung bình)")
+    ax.set_title("Tín hiệu nào báo sớm nhất (mùa 2022-23 đến 2025-26)")
+    ax.set_xlim(0, max(3.5, d['lead_mean'].max() + 1.8))
+    plt.tight_layout()
+    fig.savefig(output_dir / 'tv3_signal_lead.png')
+    plt.close(fig)
+
+
+def plot_season_progress(progress: dict, output_dir: Path):
+    """So bang da khoi phat den cung tuan mua: mua hien tai so voi cac mua truoc."""
+    setup_style()
+    hist = progress['history']
+    names = list(hist) + [progress['season']]
+    vals = list(hist.values()) + [progress['states_onset_now']]
+    colors = ['#BDBDBD'] * len(hist) + ['#D55E00']
+    fig, ax = plt.subplots(figsize=(9, 4))
+    ax.bar(names, vals, color=colors)
+    ax.axhline(progress['history_median'], color='#0072B2', linestyle='--', linewidth=1.2)
+    ax.text(len(names) - 0.5, progress['history_median'] + 0.8, f"trung vị {progress['history_median']:.0f}",
+            color='#0072B2', ha='right', fontsize=9)
+    ax.set_ylabel("Số bang đã khởi phát")
+    ax.set_title(f"Số bang đã khởi phát đến tuần {progress['onset_confirmed_by_week']} của mùa")
+    plt.xticks(rotation=30)
+    plt.tight_layout()
+    fig.savefig(output_dir / 'tv3_season_progress.png')
+    plt.close(fig)
+
+
+def plot_onset_latitude(milestones: pd.DataFrame, dim_state: pd.DataFrame, spread: dict, output_dir: Path):
+    """Thu hang khoi phat trung binh cua moi bang theo vi do (48 bang luc dia + DC)."""
+    setup_style()
+    x = milestones[~milestones['season'].isin(['2009-10', '2010-11', '2020-21'])
+                   & (milestones['season'] < milestones['season'].max())].dropna(subset=['onset_week']).copy()
+    x['rk'] = x.groupby('season')['onset_week'].rank(pct=True)
+    s = x.groupby('state')['rk'].mean().rename('rk').reset_index().merge(dim_state, on='state')
+    s = s[s['contiguous'].astype(bool)]
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.scatter(s['lat'], s['rk'], color='#009E73', s=22)
+    for r in s.itertuples():
+        ax.annotate(r.state.upper(), (r.lat, r.rk), fontsize=7, xytext=(2, 2), textcoords='offset points')
+    b = np.polyfit(s['lat'], s['rk'], 1)
+    xs = np.linspace(s['lat'].min(), s['lat'].max(), 50)
+    ax.plot(xs, np.polyval(b, xs), color='#D55E00', linewidth=1.5)
+    ax.set_xlabel("Vĩ độ (°B)")
+    ax.set_ylabel("Thứ hạng khởi phát trung bình (0 = sớm nhất)")
+    ax.set_title(f"Bang phía Nam khởi phát sớm hơn (Spearman ρ = {spread['rho_lat']:.2f}, p = {spread['p_lat']:.1e})")
+    plt.tight_layout()
+    fig.savefig(output_dir / 'tv3_onset_latitude.png')
     plt.close(fig)
