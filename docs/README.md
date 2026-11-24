@@ -10,6 +10,7 @@ Cập nhật 14/11/2026. Mọi tài liệu của nhóm nằm trong `docs/`. Mỗ
 | 2 | [phan_cong.md](phan_cong.md) | Đoạn "Gửi Thành viên X" của mình: việc cụ thể, đầu vào, sản phẩm nộp, chương báo cáo |
 | 3 | [han_che_du_lieu.md](han_che_du_lieu.md) | Dữ liệu thiếu ở đâu và xử lý thế nào, để không ra kết luận sai |
 | 4 | [yeu_cau_mon_hoc.md](yeu_cau_mon_hoc.md) | Topic được giao, cách nộp, tiêu chí chấm |
+| 5 | [sua_doi_tv3_4_5.md](sua_doi_tv3_4_5.md) | **Mới 24/11.** TV1 đã hoàn thiện phần TV3, TV4, TV5: sửa gì, kết quả nổi bật, mỗi người làm gì tiếp, file mới cho dashboard |
 
 Cách tải dữ liệu và chạy code: [README của repo](../README.md).
 
