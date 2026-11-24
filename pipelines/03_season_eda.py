@@ -16,7 +16,7 @@ df_week = mask_sparse_ili(load_flu_week())
 dim_state = load_dim_state()
 
 print("2. Tính toán baseline, tuần khởi phát, tuần đỉnh và giai đoạn mùa")
-season_milestones, season_phase = detect_season_milestones(df_week)
+season_milestones, season_phase = detect_season_milestones(df_week, dim_state)
 season_milestones.to_parquet(DATA_DIR / 'season_milestones.parquet', index=False)
 season_phase.to_parquet(DATA_DIR / 'season_phase.parquet', index=False)
 
