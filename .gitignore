@@ -41,3 +41,5 @@ restore_test*/
 
 # Quyen bao cao dung tu reports/build_report.py
 reports/build/
+
+test.*
