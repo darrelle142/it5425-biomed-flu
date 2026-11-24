@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from fluwatch.warehouse.load import *
 from fluwatch.seasonality.milestones import *
@@ -21,9 +22,10 @@ season_milestones.to_parquet(DATA_DIR / 'season_milestones.parquet', index=False
 season_phase.to_parquet(DATA_DIR / 'season_phase.parquet', index=False)
 
 print("3. Phân cụm các bang theo hình dạng đường cong mùa vụ")
-state_cluster, Z, meta = cluster_states(df_week)
+state_cluster, Z, meta = cluster_states(df_week, dim_state=dim_state)
 state_cluster.to_parquet(DATA_DIR / 'state_cluster.parquet', index=False)
 print(f"-> Số cụm tối ưu k = {meta['best_k']}, Silhouette = {meta['silhouette_scores']}")
+print(f"-> Ward so với k-means: ARI = {meta['ari_ward_kmeans']}; tính vùng: {meta['geography']}")
 
 print("4. Chạy kiểm định thống kê giữa các vùng HHS")
 stats_df, dunn_df = run_hhs_comparisons(season_milestones, dim_state)
