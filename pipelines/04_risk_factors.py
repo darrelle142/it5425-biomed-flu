@@ -59,7 +59,7 @@ ev = evidence.table(rr, lc)
 ev.to_csv(OUT / "bang_bang_chung.csv", index=False)
 print(ev[["yeu_to", "ket_qua_nhom"]].to_string(index=False))
 
-print("4. Kiem chung Shaman 2010 (BAN TAM)")
+print("4. Kiem chung Shaman 2010 (moc khoi phat co dieu kien xet nghiem cua TV3)")
 ms_path = BUSINESS / "season_milestones.parquet"
 if ms_path.exists():
     ms = pd.read_parquet(ms_path)

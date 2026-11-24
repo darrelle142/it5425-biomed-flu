@@ -70,15 +70,15 @@ Với mỗi bang, tính tương quan Spearman giữa độ chênh của yếu t�
 - **PM2.5:** khoảng tin cậy chứa 0 ở mọi độ trễ.
 - **Độ lớn:** |ρ| không quá 0,05, tức độ ẩm giải thích một phần rất nhỏ biến thiên tuần của ILI. Kết luận đúng là "có liên hệ nhất quán về chiều nhưng yếu", không phải "độ ẩm quyết định mùa cúm".
 
-## Kiểm chứng Shaman 2010 (bản tạm)
+## Kiểm chứng Shaman 2010
 
 Với mỗi bang trong 48 bang lục địa + DC và mỗi mùa có tuần khởi phát (mốc của TV3, Chương 3), lấy độ chênh độ ẩm trung bình của 2–4 tuần trước khởi phát. Giả thuyết 0 là tuần khởi phát không liên quan đến độ ẩm: thay tuần khởi phát bằng một tuần ngẫu nhiên trong tuần mùa 5–30 của cùng bang-mùa, lặp 10.000 lần (permutation test, một phía).
 
-![Trước khởi phát, độ ẩm thấp hơn so với khởi phát ngẫu nhiên (−0,02 so với +0,05 g/m³, p = 0,041)](figures/tv4_shaman_permutation.png){width=85%}
+![Trước khởi phát, độ ẩm thấp hơn so với khởi phát ngẫu nhiên (−0,075 so với +0,042 g/m³, p < 0,001)](figures/tv4_shaman_permutation.png){width=85%}
 
-Trên 416 bang-mùa của 49 bang, độ chênh độ ẩm trước khởi phát thật là −0,02 g/m³. Khi chọn tuần khởi phát ngẫu nhiên, giá trị này trung bình là +0,05 g/m³ (khoảng 95%: −0,03 đến +0,13). p một phía = 0,041.
+Trên 520 bang-mùa của 49 bang, độ chênh độ ẩm trước khởi phát thật là −0,075 g/m³ (58% số bang-mùa âm). Khi chọn tuần khởi phát ngẫu nhiên, giá trị này trung bình là +0,042 g/m³ (khoảng 95%: −0,031 đến +0,113), tức giá trị thật nằm ngoài toàn bộ khoảng của giả thuyết 0. p một phía = 0,0009.
 
-**Đây là kết quả tạm.** Mốc khởi phát dùng ở đây chưa áp dụng định nghĩa mới (khởi phát phải có xét nghiệm dương tính ≥ 2%, xem Chương 3). Với định nghĩa cũ, mùa 2021-22 có 22 bang "khởi phát" ngay tuần 40 khi chưa có cúm, nên mùa này bị bỏ khỏi phép kiểm. p = 0,041 nằm gần ngưỡng 0,05, nên kết luận chỉ được chốt sau khi chạy lại trên mốc khởi phát chính thức.
+**Định nghĩa khởi phát quyết định kết quả.** Bản đầu dùng mốc khởi phát chỉ dựa trên ILI: sau COVID, ILI ngoài mùa tăng vì COVID và RSV, nên nhiều bang "khởi phát" khi xét nghiệm cúm dương tính gần 0% (riêng mùa 2021-22 có 22 bang ở tuần 40). Khi đó phải bỏ mùa 2021-22 và p chỉ còn 0,041 (416 bang-mùa). Sau khi TV3 thêm điều kiện tuần khởi phát phải có xét nghiệm dương tính ≥ 2% (Chương 3), không cần bỏ mùa nào, số bang-mùa tăng lên 520 và tín hiệu rõ hơn gấp ba lần (−0,075 so với −0,021 g/m³). Nói cách khác, khởi phát giả làm loãng liên hệ với độ ẩm; khởi phát được xét nghiệm xác nhận thì liên hệ hiện ra rõ, đúng như giả thuyết của @shaman2010.
 
 ## Hồi quy Negative Binomial
 
@@ -145,9 +145,9 @@ Ba kết luận:
 
 - Ước lượng không chệch, và hiệu ứng cỡ 0,975 được phát hiện ở mọi lần chạy. Với dữ liệu 15 mùa × 51 bang, cỡ mẫu đủ để thấy hiệu ứng nhỏ như nhóm quan sát được.
 - Nếu dùng khoảng tin cậy thường, khi không có hiệu ứng thì 18% số lần vẫn báo "có ý nghĩa", gần gấp bốn mức 5% danh nghĩa. Đây là căn cứ để chọn khoảng tin cậy cụm theo bang.
-- Khoảng tin cậy cụm vẫn hơi lỏng (báo nhầm 8%), nên kết quả có p gần 0,05 phải đọc thận trọng. Các kết quả độ ẩm và PM2.5 ở trên có p cụm dưới 0,01, không thuộc vùng này. Kiểm chứng Shaman (p = 0,041) thì có.
+- Khoảng tin cậy cụm vẫn hơi lỏng (báo nhầm 8%), nên kết quả có p gần 0,05 phải đọc thận trọng. Các kết quả độ ẩm và PM2.5 ở trên có p cụm dưới 0,01, không thuộc vùng này. Kiểm chứng Shaman (bản đầu p = 0,041) từng thuộc vùng này; bản chính thức có p = 0,0009.
 
-**Dữ liệu chèn lỗi.** Bộ dữ liệu chèn lỗi để kiểm tra pipeline (thiếu ngẫu nhiên, mất khối nhiều tuần, trùng dòng, số sơ bộ bị sửa) do TV2 sinh và chạy trực tiếp trong bộ kiểm tra chất lượng: khoảng 510 lỗi bị bắt 100%, không báo động giả (Chương 2).
+**Dữ liệu chèn lỗi.** Để kiểm tra bộ quy tắc chất lượng của TV2 một cách độc lập, TV4 dựng bộ dữ liệu lỗi riêng (`python pipelines/04_risk_factors.py --corrupt`, `src/fluwatch/risk_factors/corrupt.py`), khác bộ TV2 tự sinh ở chỗ lỗi đi theo tình huống có thật với nguồn CDC chứ không rải đều: trạm nước thải ngừng 8 tuần, bang ngừng gửi ILINet 6 tuần, mất cả dòng 5 tuần do lỗi ghép bảng, nạp lại một tuần cho 6 bang (trùng dòng), số sơ bộ NHSN báo thiếu 15–40% (chỉ sửa xuống, như báo cáo trễ), và 200 ô thiếu rải rác. Kết quả (Chương 2, `reports/data_quality/injection_test.md`): bộ quy tắc bắt 233/285 lỗi (81,8%), không báo động giả; mất khối, trùng dòng và số sơ bộ bị sửa bắt được 100%. **Cả 52 lỗi bị lọt đều là ô `num_ili` bị xóa** trong khi `ili_pct` vẫn còn: bộ quy tắc chưa có luật đối chiếu hai cột này. Bộ tự sinh của TV2 không chèn lỗi kiểu này nên không phát hiện được; đây là lý do kiểm tra phải do người khác dựng dữ liệu lỗi.
 
 ## Kịch bản what-if
 
@@ -162,5 +162,5 @@ Kết quả trên 1.419 bang × tuần của 43 bang: ILI trung bình gần như
 - Đây là nghiên cứu quan sát ở cấp bang × tuần: các rate ratio là liên hệ, không phải quan hệ nhân quả. Mô hình chưa kiểm soát nhiệt độ, vốn tương quan với cả độ ẩm và PM2.5.
 - ILI là triệu chứng giống cúm, không phải ca cúm xác nhận. Sau COVID, ILI tăng mức nền cả khi không có cúm; hiệu ứng cố định theo mùa chỉ hấp thụ được phần thay đổi giữa các mùa.
 - Độ ẩm và PM2.5 là trung bình của 3–5 thành phố lớn nhất (thời tiết) hoặc các trạm EPA trong bang, không đại diện cho mọi vùng của bang.
-- Kiểm chứng Shaman là bản tạm, sẽ chạy lại khi có mốc khởi phát theo định nghĩa mới.
+- Kiểm chứng Shaman dùng khởi phát theo ILI (hoặc NSSP) có xét nghiệm xác nhận; trước mùa 2016-17 chưa có số xét nghiệm cấp bang nên các mùa này vẫn dùng định nghĩa chỉ theo ILI.
 - Số liệu PM2.5 của EPA mới có đến tuần 30/05/2026, nên mô hình chính không có đầu mùa 2026-27.

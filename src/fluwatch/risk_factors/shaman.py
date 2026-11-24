@@ -6,7 +6,8 @@ Gia thuyet 0: tuan khoi phat khong lien quan do am -> thay w bang tuan ngau nhie
 cung bang-mua. Thong ke T = trung binh quan sat tren moi bang-mua; p mot phia = P(T_null <= T_obs).
 
 Luu y: Shaman 2010 xac dinh khoi phat tu tu vong do viem phoi va cum, nhom dung ILI, nen day la kiem chung gia thuyet
-voi dinh nghia khoi phat khac. Mua 2021-22 bi bo cho den khi TV3 ap dung dinh nghia khoi phat moi (nhat ky Q11).
+voi dinh nghia khoi phat khac. Moc cua TV3 da ap dung dieu kien xet nghiem duong tinh >= 2% (tu 2016-17), nen
+khong con phai bo mua 2021-22 (ban tam truoc day bo mua nay vi 22 bang 'khoi phat' gia o tuan 40).
 """
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ import pandas as pd
 WINDOW = (2, 4)          # 2-4 tuan truoc khoi phat
 NULL_WEEKS = (5, 30)     # tuan mua co the la khoi phat
 N_PERM = 10000
-SKIP_SEASONS = ("2021-22",)
+SKIP_SEASONS = ()  # truoc day ("2021-22",) khi TV3 chua co dieu kien xet nghiem
 
 
 def onset_pairs(milestones, weekly, states, excluded_seasons):
