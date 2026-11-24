@@ -10,19 +10,19 @@ Dữ liệu là bảng bang × tuần đọc qua `load_flu_week()` (51 bang, 201
 
 - **Mức cảnh báo** (`alert_level`) gộp từ mức CDC dựa trên tỉ lệ nhập viện NHSN: mức 0–1 → *thấp*, 2 → *trung bình*, 3–4 → *cao*. Ngưỡng của từng bang lấy từ bảng ngưỡng CDC.
 - **Vượt ngưỡng** `y_exceed_1w`, `y_exceed_2w` = 1 nếu 1 (2) tuần sau bang ở mức *cao*. Nhãn được ghép theo ngày của cùng bang, không theo vị trí dòng.
-- **Khởi phát** `y_onset_next2w` = 1 nếu mùa cúm của bang khởi phát trong 2 tuần tới. Mức nền ILI = trung bình + 2 độ lệch chuẩn của ILI các tuần MMWR 21–39 trong 3 mùa trước (bỏ 2020-21). Khởi phát là tuần đầu của 3 tuần liên tiếp có ILI ≥ mức nền. Nhãn chỉ tính cho các tuần chưa khởi phát.
-- Bỏ khỏi huấn luyện và đánh giá: 4 tuần gần nhất (số sơ bộ), mùa 2020-21, và các tuần mà tuần đích còn là số sơ bộ.
+- **Khởi phát** `y_onset_next2w` = 1 nếu mùa cúm của bang khởi phát trong 2 tuần tới, theo tuần khởi phát chung của Chương 3 (xem đoạn *Nhãn khởi phát* bên dưới). Nhãn chỉ tính cho các tuần chưa khởi phát.
+- Bỏ khỏi huấn luyện và đánh giá: 4 tuần gần nhất (số sơ bộ), mùa 2020-21, các tuần NHSN báo cáo ít (`low_reporting`), và các tuần mà tuần đích còn là số sơ bộ.
 
 Chia theo **mùa**, không xáo trộn. Mô hình vượt ngưỡng huấn luyện trên 2022-23 đến 2024-25, vì trước đó gần như không có mức *cao* (mùa 2021-22 chỉ có 2 tuần–bang). Mô hình khởi phát huấn luyện trên mọi mùa ILINet đến 2024-25. Cả hai được kiểm tra trên mùa **2025-26**.
 
 | Mùa | Dòng có nhãn vượt ngưỡng | Số dòng mức *cao* 1 tuần sau |
 | --- | --- | --- |
 | 2022-23 | 2652 | 109 |
-| 2023-24 | 2616 | 45 |
-| 2024-25 | 2652 | 378 |
+| 2023-24 | 1933 | 45 |
+| 2024-25 | 2481 | 378 |
 | 2025-26 (test) | 2703 | 151 |
 
-: Số dòng bang × tuần có nhãn theo mùa
+: Số dòng bang × tuần có nhãn theo mùa (sau khi bỏ tuần sơ bộ và tuần NHSN báo cáo ít)
 
 Lịch sử nhập viện giả lập 2010–2023 (kế hoạch v2 mục 7) không dùng, vì NHSN thật đã có đủ 3 mùa có mức *cao* (532 dòng dương để huấn luyện). Quyết định này đã được người quản lý tiến độ đồng ý và ghi vào `docs/ke_hoach.md`. Các tuần NHSN báo cáo ít (5–10/2024, cột `low_reporting`) bị loại khỏi huấn luyện và đánh giá vì nhãn mức CDC ở các tuần này không đáng tin; tập huấn luyện vượt ngưỡng còn 7.066 dòng.
 
@@ -66,11 +66,15 @@ Kiểm định DeLong:
 
 AUC chỉ cao một phần vì nhiều bang đã ở mức *cao* từ trước. Xét riêng các tuần bang **chưa** ở mức *cao*, tức lúc cần cảnh báo sớm, AUC vẫn là 0,990 [0,983–0,995] với 1 tuần (42 dương) và 0,971 [0,962–0,980] với 2 tuần (75 dương).
 
+**Đường precision-recall.** Vì chỉ 5,5% dòng là dương, AUC có thể làm khác biệt giữa các mô hình trông nhỏ hơn thực tế. Đường PR trả lời câu hỏi thực tế hơn: trong các lần phát cảnh báo, bao nhiêu phần trăm là đúng. Theo diện tích dưới đường PR (AP), khoảng cách giữa mô hình và mô hình nền hiện trạng rộng hơn nhiều so với khi đo bằng AUC: 0,914 so với 0,746 ở tầm 1 tuần, và 0,638 so với 0,349 ở tầm 2 tuần (đoán bừa: 0,055). Ở ngưỡng đang dùng, khoảng một nửa số cảnh báo tầm 1 tuần là đúng (47%) trong khi gần như không bỏ sót ca nào (99%).
+
+![Ở ngưỡng đang dùng, khoảng 1/2 cảnh báo là đúng, đổi lại gần như không bỏ sót](figures/tv5_pr_curve.png){width=95%}
+
 ![Xác suất dự báo 1 tuần khớp thực tế; dự báo 2 tuần lệch nhẹ nhưng vẫn xếp hạng tốt](figures/tv5_calibration_curve.png){width=95%}
 
 **Hiệu chỉnh.** Kiểm định Hosmer-Lemeshow (10 nhóm, bậc tự do g − 2) không bác bỏ hiệu chỉnh tốt ở dự báo 1 tuần (p = 0,99). Ở dự báo 2 tuần thì có bác bỏ ở mức 5% (p = 0,037 với mô hình đầy đủ): mô hình đánh giá quá cao xác suất ở vùng 0,4–0,9. Vì vậy dashboard nên hiển thị mức cảnh báo hơn là con số phần trăm chính xác cho tầm 2 tuần.
 
-**Ngưỡng.** Ngưỡng Youden của mô hình *nhập viện + ILI* là 0,046 (1 tuần). Trên mùa test, ngưỡng này cho độ nhạy 0,99, độ đặc hiệu 0,93, nhưng giá trị dự đoán dương chỉ 0,47: khoảng một nửa số báo động là báo giả. Với tầm 2 tuần, ngưỡng 0,053 cho độ nhạy 0,91, độ đặc hiệu 0,91 và giá trị dự đoán dương 0,36. Tỉ lệ dương thấp (5,5%) khiến ngưỡng Youden ưu tiên không bỏ sót. Với mục đích chuẩn bị giường bệnh, đó là lựa chọn chấp nhận được.
+**Ngưỡng.** Ngưỡng Youden của mô hình *nhập viện + ILI* là 0,047 (1 tuần). Trên mùa test, ngưỡng này cho độ nhạy 0,99, độ đặc hiệu 0,93, nhưng giá trị dự đoán dương chỉ 0,47: khoảng một nửa số báo động là báo giả. Với tầm 2 tuần, ngưỡng 0,055 cho độ nhạy 0,91, độ đặc hiệu 0,91 và giá trị dự đoán dương 0,36. Tỉ lệ dương thấp (5,5%) khiến ngưỡng Youden ưu tiên không bỏ sót. Với mục đích chuẩn bị giường bệnh, đó là lựa chọn chấp nhận được.
 
 **Khởi phát.** Với nhãn khởi phát chung của Chương 3, mô hình khởi phát đạt AUC 0,820 [0,767–0,870] (bản đầy đủ) và 0,672 (bản base), **thua** mô hình nền chỉ dùng tỉ số ILI / mức nền (0,872 [0,830–0,910]; DeLong p = 0,010 với bản đầy đủ). Bản đầy đủ còn lệch xác suất (Hosmer-Lemeshow p = 0,002). Kết luận: để báo khởi phát, theo dõi ILI so với mức nền là đủ và tốt hơn mô hình logistic; dashboard dùng chính tỉ số này. Ở bản đầu, khi TV5 tự tính khởi phát không có điều kiện xét nghiệm, mô hình trông ngang mô hình nền (0,858 so với 0,869): một phần khả năng dự báo khi đó đến từ các khởi phát giả mà chính ILI tạo ra. Mẫu test nhỏ (412 dòng, 82 dương).
 
@@ -82,8 +86,8 @@ Các số ở trên dùng số liệu **đã sửa**. Ngoài thực tế, mỗi 
 | --- | --- | --- | --- | --- | --- |
 | Chỉ nhập viện | 1 tuần | 0,985 [0,979–0,990] | 0,989 | 0,786 | 0,969 |
 | Nhập viện + ILI | 1 tuần | 0,988 [0,980–0,996] | 0,992 | 0,842 | 0,981 |
-| Chỉ nhập viện | 2 tuần | 0,955 [0,947–0,961] | 0,958 | 0,652 | 0,902 |
-| Nhập viện + ILI | 2 tuần | 0,949 [0,934–0,961] | 0,951 | 0,625 | 0,873 |
+| Chỉ nhập viện | 2 tuần | 0,955 [0,948–0,962] | 0,958 | 0,652 | 0,902 |
+| Nhập viện + ILI | 2 tuần | 0,949 [0,935–0,962] | 0,951 | 0,625 | 0,873 |
 
 : Backtest: AUC khi dùng số liệu như lúc công bố so với số đã sửa
 
@@ -91,7 +95,7 @@ Số sơ bộ chỉ làm AUC giảm 0,002–0,004, và mô hình vẫn hơn mô 
 
 ![Cảnh báo đến trước hoặc đúng tuần lên mức Cao ở 45/45 bang, trung vị sớm 1 tuần](figures/tv5_backtest_timeline.png){width=100%}
 
-Với cơ chế lùi này, cả **45/45** bang lên mức *cao* trong mùa 2025-26 đều được cảnh báo trước hoặc đúng tuần lên *cao*: 6 bang báo đúng tuần, 28 bang trước 1 tuần, 9 bang trước 2 tuần, 2 bang trước 3 tuần trở lên. Có 4 bang có cảnh báo nhưng cả mùa không lên *cao*.
+Với cơ chế lùi này, cả **45/45** bang lên mức *cao* trong mùa 2025-26 đều được cảnh báo trước hoặc đúng tuần lên *cao*: 7 bang báo đúng tuần, 28 bang trước 1 tuần, 8 bang trước 2 tuần, 2 bang trước 3 tuần trở lên. Có 4 bang có cảnh báo nhưng cả mùa không lên *cao*.
 
 **Hạn chế.**
 
@@ -99,4 +103,4 @@ Với cơ chế lùi này, cả **45/45** bang lên mức *cao* trong mùa 2025-
 2. Nước thải và độ ẩm không có lịch sử sửa số, nên backtest không đánh giá được bản đầy đủ.
 3. Mô hình được huấn luyện trên số đã sửa, vì không có số sơ bộ trước 10/2024.
 4. Tầm báo trước thực tế chủ yếu là 1 tuần. Muốn sớm hơn phải dùng tầm 2 tuần, chấp nhận AUC thấp hơn và xác suất kém chuẩn hơn.
-5. Xác suất tầm 2 tuần chưa hiệu chỉnh tốt (Hosmer-Lemeshow p = 0,01–0,04); có thể hiệu chỉnh lại (Platt, isotonic) nếu dùng con số phần trăm.
+5. Xác suất tầm 2 tuần chưa hiệu chỉnh tốt (Hosmer-Lemeshow p = 0,01–0,04). Chúng tôi đã thử hiệu chỉnh lại bằng Platt và isotonic, học trên dự báo chéo theo mùa của 3 mùa huấn luyện (để riêng từng mùa, huấn luyện trên 2 mùa còn lại), không dùng mùa test. Kết quả không tốt hơn: Hosmer-Lemeshow p giảm còn 0,006 (Platt) và 0,011 (isotonic), Brier gần như không đổi (0,0328 và 0,0326 so với 0,0328). Trên các mùa huấn luyện, mô hình không hề đánh giá quá cao xác suất, nên độ lệch ở mùa 2025-26 là đặc thù của mùa này, không sửa được bằng dữ liệu các mùa trước. Vì vậy chúng tôi giữ xác suất gốc và khuyên dùng mức cảnh báo thay vì con số phần trăm ở tầm 2 tuần.
