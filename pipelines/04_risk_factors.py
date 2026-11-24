@@ -1,6 +1,8 @@
 """TV4 (RQ4): yeu to anh huong - tuong quan tre, Negative Binomial, kiem chung Shaman 2010.
 
-Chay: python pipelines/04_risk_factors.py
+Chay: python pipelines/04_risk_factors.py [--sim] [--corrupt]
+    --sim      kiem tra phuong phap bang du lieu gia lap (~10 phut)
+    --corrupt  sinh bo du lieu chen loi cho TV2 (data/sandbox/corrupted/)
 Doc: data/business/ (load_flu_week cua TV2), data/business/season_milestones.parquet (TV3, cho Shaman).
 Ghi: data/business/risk_rate_ratios.csv, data/business/whatif.parquet (hop dong ke_hoach.md muc 4.2),
      reports/tv4/*.csv|json (gom bang_bang_chung.csv),
@@ -71,6 +73,14 @@ if ms_path.exists():
         plots.shaman(summ, t_null, FIG / "tv4_shaman_permutation.png")
 else:
     print("   chua co season_milestones.parquet (TV3) -> bo qua")
+
+if "--corrupt" in sys.argv:
+    from fluwatch.risk_factors import corrupt
+
+    print("4b. Bo du lieu chen loi cho TV2 (data/sandbox/corrupted/)")
+    d, key = corrupt.write(ROOT)
+    print(key.groupby(["error_type", "scenario"]).size().to_string())
+    print(f"   -> {d.relative_to(ROOT)}; TV2 cham: python pipelines/02_warehouse.py --steps inject")
 
 if "--sim" in sys.argv:
     import numpy as np
