@@ -19,8 +19,8 @@ from matplotlib.patches import Patch  # noqa: E402
 from fluwatch.alerting.models import EXCEED_FEATS, TEST_SEASON  # noqa: E402
 
 OI = {"grey": "#8C8C8C", "orange": "#E69F00", "blue": "#0072B2", "green": "#009E73", "verm": "#D55E00", "sky": "#56B4E9"}
-MODEL_COLOR = {"persistence": OI["grey"], "nhsn": OI["orange"], "base": OI["blue"], "full": OI["green"]}
-MODEL_LABEL = {"persistence": "Mô hình nền", "nhsn": "Chỉ nhập viện", "base": "Nhập viện + ILI", "full": "+ cấp cứu, nước thải"}
+MODEL_COLOR = {"persistence": OI["grey"], "hien_trang": "#000000", "nhsn": OI["orange"], "base": OI["blue"], "full": OI["green"]}
+MODEL_LABEL = {"persistence": "Nền: đã ở mức Cao (0/1)", "hien_trang": "Nền: nhập viện hiện tại / ngưỡng", "nhsn": "Chỉ nhập viện", "base": "Nhập viện + ILI", "full": "+ cấp cứu, nước thải"}
 INK, MUTED, GRID = "#222222", "#666666", "#E6E6E6"
 
 
@@ -48,11 +48,12 @@ def fig_roc(ev, roc, out):
     for ax, (lab, name) in zip(axes, [("y_exceed_1w", "1 tuần tới"), ("y_exceed_2w", "2 tuần tới")]):
         t = ev["targets"][lab]
         ax.plot([0, 1], [0, 1], color=GRID, lw=1, ls=(0, (4, 3)), zorder=1)
-        for m in ["persistence", "nhsn", "base", "full"]:
+        for m in ["persistence", "hien_trang", "nhsn", "base", "full"]:
             r = roc[(roc["target"] == lab) & (roc["model"] == m)]
             a = t["models"][m]
             ls = (0, (5, 2)) if m == "full" else "-"
-            ax.plot(r["fpr"], r["tpr"], color=MODEL_COLOR[m], lw=1.8 if m != "persistence" else 1.4, ls=ls,
+            ls = (0, (1, 1.5)) if m == "hien_trang" else ls
+            ax.plot(r["fpr"], r["tpr"], color=MODEL_COLOR[m], lw=1.8 if m not in ("persistence", "hien_trang") else 1.3, ls=ls,
                     label=f"{MODEL_LABEL[m]}: AUC {_vn(a['auc'])} [{_vn(a['auc_ci_low'])}–{_vn(a['auc_ci_high'])}]")
         b = t["models"]["base"]["at_train_threshold"]
         ax.scatter([1 - b["specificity"]], [b["sensitivity"]], s=46, color=OI["verm"], zorder=5, edgecolor="white", linewidth=1.2)
@@ -64,8 +65,9 @@ def fig_roc(ev, roc, out):
         ax.set_xlim(0, 1); ax.set_ylim(0, 1.01); ax.set_aspect("equal", adjustable="box")
         ax.legend(loc="lower right", fontsize=7.4, frameon=False, handlelength=2.2)
     axes[0].set_ylabel("Tỉ lệ phát hiện đúng (độ nhạy)")
-    a1, p1 = ev["targets"]["y_exceed_1w"]["models"]["base"]["auc"], ev["targets"]["y_exceed_1w"]["models"]["persistence"]["auc"]
-    _title(fig, f"Mô hình logistic báo trước 1 tuần với AUC {_vn(a1, 2)}, hơn hẳn mô hình nền ({_vn(p1, 2)})",
+    m1, m2 = ev["targets"]["y_exceed_1w"]["models"], ev["targets"]["y_exceed_2w"]["models"]
+    _title(fig, f"Logistic hơn việc chỉ nhìn số nhập viện hiện tại: AUC {_vn(m1['base']['auc'], 3)} so với "
+                f"{_vn(m1['hien_trang']['auc'], 3)} (1 tuần), {_vn(m2['base']['auc'], 3)} so với {_vn(m2['hien_trang']['auc'], 3)} (2 tuần)",
            "Thêm cấp cứu và nước thải không cải thiện thêm: đường xanh lục chồng lên đường xanh dương")
     fig.tight_layout(rect=(0, 0, 1, 0.92))
     fig.savefig(out); plt.close(fig)
@@ -78,7 +80,7 @@ def _wilson(k, n, z=1.96):
     d = 1 + z * z / n
     c = (p + z * z / (2 * n)) / d
     h = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
-    return c - h, c + h
+    return max(c - h, 0.0), min(c + h, 1.0)  # lam tron so hoc co the ra -1e-17 khi k = 0
 
 
 def fig_calibration(df, fitted, ev, out):
@@ -99,7 +101,7 @@ def fig_calibration(df, fitted, ev, out):
         r = np.array(rows)
         sq = lambda v: np.sqrt(np.clip(v, 0, None))  # noqa: E731
         ax.plot([0, 1], [0, 1], color=MUTED, lw=1, ls=(0, (4, 3)))
-        ax.errorbar(r[:, 0], r[:, 1], yerr=[r[:, 1] - r[:, 2], r[:, 3] - r[:, 1]], fmt="none", ecolor=OI["green"], elinewidth=1.1, capsize=2.5)
+        ax.errorbar(r[:, 0], r[:, 1], yerr=np.clip([r[:, 1] - r[:, 2], r[:, 3] - r[:, 1]], 0, None), fmt="none", ecolor=OI["green"], elinewidth=1.1, capsize=2.5)
         ax.plot(r[:, 0], r[:, 1], color=OI["green"], lw=1.6)
         ax.scatter(r[:, 0], r[:, 1], s=np.clip(r[:, 4] / 14, 14, 150), color=OI["green"], edgecolor="white", linewidth=1.0, zorder=4)
         ax.set_xscale("function", functions=(sq, np.square)); ax.set_yscale("function", functions=(sq, np.square))

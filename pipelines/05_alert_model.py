@@ -2,7 +2,7 @@
 
     python pipelines/05_alert_model.py
 
-Đọc dữ liệu qua load_flu_week() -> nhãn -> huấn luyện -> models/*.joblib
+Đọc dữ liệu qua load_flu_week() + season_milestones.parquet (TV3) -> nhãn -> huấn luyện -> models/*.joblib
 -> data/business/alert_forecast.parquet. Chạy từ thư mục gốc repo.
 """
 import logging
@@ -28,7 +28,15 @@ from fluwatch.warehouse.load import load_flu_week  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 log = logging.getLogger("05")
 
-df = add_features(build_labels(load_flu_week()))
+import pandas as pd  # noqa: E402
+
+ms_path = ROOT / "data" / "business" / "season_milestones.parquet"
+milestones = pd.read_parquet(ms_path) if ms_path.exists() else None
+if milestones is None or "onset_date" not in milestones:
+    log.info("CẢNH BÁO: chưa có season_milestones.parquet (TV3, có onset_date): tự tính tuần khởi phát")
+    milestones = None
+df = add_features(build_labels(load_flu_week(), milestones))
+log.info("Nhãn khởi phát lấy từ: %s", df["onset_source"].iloc[0])
 log.info("Bảng: %d dòng, %d bang", len(df), df["state"].nunique())
 
 fitted = fit_all(df)

@@ -46,3 +46,15 @@ def test_hosmer_lemeshow():
     y = (rng.uniform(size=5000) < p).astype(int)
     assert hosmer_lemeshow(y, p)["p_df_g_minus_2"] > 0.01
     assert hosmer_lemeshow(y, np.clip(p + 0.15, 0, 0.999))["p_df_g_minus_2"] < 1e-6
+
+
+def test_onset_label_from_tv3_milestones():
+    """Nhan khoi phat lay tu moc cua TV3: 1 neu khoi phat trong 2 tuan toi, khong tinh tuan da khoi phat."""
+    from fluwatch.alerting.labels import onset_from_milestones
+    m = pd.DataFrame({"state": ["ca"], "season": ["2025-26"], "onset_date": [pd.Timestamp("2025-11-22")],
+                      "baseline": [2.0]})
+    o = onset_from_milestones(m)
+    weeks = pd.to_datetime(["2025-11-01", "2025-11-08", "2025-11-15", "2025-11-22"])
+    dt = (o["onset_week_ili"].iloc[0] - pd.Series(weeks)).dt.days
+    y = np.where(dt > 0, (dt <= 14).astype(float), np.nan)
+    assert y[0] == 0 and y[1] == 1 and y[2] == 1 and np.isnan(y[3])

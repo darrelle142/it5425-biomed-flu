@@ -109,6 +109,8 @@ def run_backtest(df: pd.DataFrame, fitted: dict) -> tuple[dict, pd.DataFrame, pd
                       "auc_asof": auc_fast(y, pa), "auc_asof_ci": [lo_a, hi_a],
                       "auc_retro": auc_fast(y, pr), "brier_asof": brier(y, pa), "brier_retro": brier(y, pr),
                       "auc_persistence_asof": auc_fast(y, pers),
+                      "auc_hien_trang_asof": auc_fast(y, d["rate_ratio_a"].to_numpy()),
+                      "delong_asof_vs_hien_trang": delong_test(y, pa, d["rate_ratio_a"].to_numpy()),
                       "delong_asof_vs_retro": delong_test(y, pa, pr),
                       "delong_asof_vs_persistence": delong_test(y, pa, pers)}
         summary["targets"][lab] = res

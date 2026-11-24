@@ -109,18 +109,19 @@ def _scores(df, fitted, label, variants):
     return s
 
 
-def _eval_target(df, fitted, label, variants, persistence, full_feats):
+def _eval_target(df, fitted, label, variants, baselines, full_feats):
     te = df[df["train_ok"] & (df["season"] == TEST_SEASON) & df[label].notna() & df[full_feats].notna().all(axis=1)]
     te = te.reset_index(drop=True)
     y = te[label].astype(int).to_numpy()
     states = te["state"].to_numpy()
     scores = _scores(te, fitted, label, variants)
-    scores["persistence"] = persistence(te)
+    for name, fn in baselines.items():
+        scores[name] = fn(te)
 
     res = {"n": int(len(te)), "n_pos": int(y.sum()), "base_rate": float(y.mean()), "models": {}, "delong": []}
     roc_rows = []
     for name, s in scores.items():
-        is_prob = name != "persistence" or label != "y_onset_next2w"
+        is_prob = name == "persistence" and label != "y_onset_next2w"
         lo, hi, nb = bootstrap_auc_by_state(y, s, states)
         m = {"auc": auc_fast(y, s), "auc_ci_low": lo, "auc_ci_high": hi, "boot_valid": nb,
              "average_precision": float(average_precision_score(y, s))}
@@ -136,7 +137,8 @@ def _eval_target(df, fitted, label, variants, persistence, full_feats):
         fpr, tpr, _ = roc_curve(y, s)
         roc_rows.append(pd.DataFrame({"fpr": fpr, "tpr": tpr, "model": name, "target": label}))
 
-    pairs = [("full", "base"), ("base", "persistence"), ("base", "nhsn"), ("full", "persistence")]
+    pairs = [("full", "base"), ("base", "persistence"), ("base", "nhsn"), ("full", "persistence"),
+             ("nhsn", "hien_trang"), ("base", "hien_trang"), ("full", "hien_trang")]
     for a, b in pairs:
         if a in scores and b in scores:
             res["delong"].append({"a": a, "b": b, **delong_test(y, scores[a], scores[b])})
@@ -160,12 +162,15 @@ def evaluate(df: pd.DataFrame, fitted: dict) -> tuple[dict, pd.DataFrame]:
     ex_variants = [v for v in ("nhsn", "base", "full")]
     for h in (1, 2):
         label = f"y_exceed_{h}w"
+        # hai mô hình nền: persistence (tuần này đã ở mức Cao: 0/1) và hien_trang (tỉ lệ nhập viện / ngưỡng Cao hiện
+        # tại, liên tục) - mô hình nền mạnh: mô hình chỉ có ý nghĩa nếu hơn được việc nhìn số nhập viện hiện tại
         r, roc = _eval_target(df, fitted, label, ex_variants,
-                              lambda t: (t["cdc_level"] >= 3).astype(float).to_numpy(), EXCEED_FEATS["full"])
+                              {"persistence": lambda t: (t["cdc_level"] >= 3).astype(float).to_numpy(),
+                               "hien_trang": lambda t: t["rate_ratio"].to_numpy()}, EXCEED_FEATS["full"])
         out["targets"][label] = r
         rocs.append(roc)
     r, roc = _eval_target(df, fitted, "y_onset_next2w", ["base", "full"],
-                          lambda t: t["ili_ratio"].to_numpy(), ONSET_FEATS["full"])
+                          {"hien_trang": lambda t: t["ili_ratio"].to_numpy()}, ONSET_FEATS["full"])
     out["targets"]["y_onset_next2w"] = r
     rocs.append(roc)
 

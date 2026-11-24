@@ -1,11 +1,15 @@
 """Nhãn cho mô hình cảnh báo (TV5).
 
 build_labels(df) nhận bảng từ load_flu_week() và thêm các cột:
-  ili_baseline, onset_week_ili : mức nền ILI và tuần khởi phát (tự tính, theo định nghĩa v2 mục 6)
+  ili_baseline                 : mức nền ILI (tự tính, dùng làm đặc trưng ili_ratio)
+  onset_week_ili               : ngày tuần khởi phát. Mặc định lấy từ season_milestones.parquet của TV3 (một định nghĩa
+                                 chung cho cả nhóm: 3 tuần ≥ mức nền + xét nghiệm dương tính ≥ 2% từ 2016-17);
+                                 không có file thì tự tính như bản đầu (onset_source = 'tv5')
   alert_level                  : thap | trung_binh | cao (từ cdc_level)
   y_exceed_1w, y_exceed_2w     : 1 nếu 1 / 2 tuần sau bang ở mức Cao
   y_onset_next2w               : 1 nếu mùa khởi phát trong 2 tuần tới (chỉ tính tuần chưa khởi phát)
-  train_ok                     : True nếu dòng dùng được để huấn luyện/đánh giá
+  train_ok                     : True nếu dòng dùng được để huấn luyện/đánh giá (bỏ số sơ bộ, 2020-21 và các tuần
+                                 low_reporting: NHSN báo cáo ít 5-10/2024, nhãn mức CDC không đáng tin)
 """
 from __future__ import annotations
 
@@ -88,12 +92,27 @@ def _shift_forward(df: pd.DataFrame, col: str, weeks: int) -> pd.Series:
     return pd.Series(m["_v"].to_numpy(), index=df.index)
 
 
-def build_labels(df: pd.DataFrame) -> pd.DataFrame:
+def onset_from_milestones(milestones: pd.DataFrame) -> pd.DataFrame:
+    """Mốc khởi phát của TV3 -> (state, season, onset_week_ili = ngày, onset_baseline)."""
+    m = milestones.copy()
+    m["state"], m["season"] = m["state"].astype(str), m["season"].astype(str)
+    return pd.DataFrame({"state": m["state"], "season": m["season"],
+                         "onset_week_ili": pd.to_datetime(m["onset_date"]), "onset_baseline": m["baseline"]})
+
+
+def build_labels(df: pd.DataFrame, milestones: pd.DataFrame | None = None) -> pd.DataFrame:
     df = df.sort_values(["state", "week"]).reset_index(drop=True).copy()
 
     base = ili_baseline(df)
-    onset = onset_weeks(df, base)
+    if milestones is not None:
+        onset = onset_from_milestones(milestones)
+        src = "tv3"
+    else:
+        onset = onset_weeks(df, base).merge(base.rename(columns={"ili_baseline": "onset_baseline"}),
+                                            on=["state", "season"], how="left")
+        src = "tv5"
     df = df.merge(base, on=["state", "season"], how="left").merge(onset, on=["state", "season"], how="left")
+    df["onset_source"] = src
 
     df["alert_level"] = alert_level_from_cdc(df["cdc_level"])
     is_high = df["alert_level"].map({"cao": 1.0, "thap": 0.0, "trung_binh": 0.0})
@@ -116,10 +135,11 @@ def build_labels(df: pd.DataFrame) -> pd.DataFrame:
     # mùa không có khởi phát: nhãn 0 nếu đã đủ dữ liệu quan sát (t + 2 tuần + 3 tuần xác nhận)
     # chỉ khi bang đó thực sự có ILI (≥80% tuần của mùa); thiếu ILI thì để trống chứ không coi là "không khởi phát"
     ili_cov = df.groupby(["state", "season"])["ili_pct"].transform(lambda s: s.notna().mean())
-    no_onset = ~has_onset & df["ili_baseline"].notna() & (df["season"] != EXCLUDED_SEASON) & (ili_cov >= 0.8)
+    no_onset = ~has_onset & df["onset_baseline"].notna() & (df["season"] != EXCLUDED_SEASON) & (ili_cov >= 0.8)
     observed = (last_week - df["week"]).dt.days >= 28
     y[no_onset & observed] = 0.0
     df["y_onset_next2w"] = y
 
-    df["train_ok"] = (~df["is_preliminary"].astype(bool)) & (df["season"] != EXCLUDED_SEASON)
+    low = df["low_reporting"].astype("boolean").fillna(False).astype(bool) if "low_reporting" in df else False
+    df["train_ok"] = (~df["is_preliminary"].astype(bool)) & (df["season"] != EXCLUDED_SEASON) & ~low
     return df.drop(columns=["_high", "_prelim"])
