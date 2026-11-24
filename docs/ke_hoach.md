@@ -1,16 +1,30 @@
-# Kế hoạch về đích (14/11 – 22/11/2026)
+# Kế hoạch về đích (14/11 – 29/11/2026)
 
 > 📍 [Mục lục tài liệu](README.md) · Việc chi tiết từng người: [phan_cong.md](phan_cong.md) · Kế hoạch gốc: [ke_hoach_v2.docx](ke_hoach_v2.docx)
 
-Đây là **kế hoạch hiện hành duy nhất** của nhóm (cập nhật 14/11/2026, người quản lý tiến độ: Dũng, kiêm TV4). Khi tài liệu khác nói khác, theo file này.
+Đây là **kế hoạch hiện hành duy nhất** của nhóm (lập 14/11/2026, cập nhật 24/11/2026: lùi hạn 1 tuần; người quản lý tiến độ: Dũng, kiêm TV4). Khi tài liệu khác nói khác, theo file này.
 
 ## 1. Tóm tắt 1 phút
 
-- **Nộp bài: chủ nhật 22/11/2026.** Khóa số liệu: thứ Năm 19/11, 18:00 (tag `v2026-11-19` trên Hugging Face).
+- **Nộp bài: chủ nhật 29/11/2026** (thầy cho thêm 1 tuần). Khóa số liệu: thứ Năm 26/11, 18:00 (tag `v2026-11-26` trên Hugging Face). Lịch mới: mục 1b; các ngày trong mục 5, 6, 9 là lịch gốc, cộng thêm 7 ngày.
 - **Cả 6 người làm song song từ 15/11**, nhờ chốt trước tên file và tên cột (mục 4). Không ai phải chờ người khác xong mới bắt đầu.
 - **Dữ liệu chung** chỉ ở Hugging Face `DragonBornRay/FluDataset`, đã có số liệu đến tuần 07/11/2026, tự cập nhật mỗi thứ Bảy.
 - **Mỗi người:** đọc đoạn của mình trong [phan_cong.md](phan_cong.md), dòng của mình trong lịch (mục 5), và các file mình phải giao (mục 4.2).
 - **Mỗi tối 21:00** báo 3 dòng trên nhóm chat và mở PR phần đã chạy được (mục 8, 9).
+
+## 1b. Lịch mới sau khi lùi 1 tuần (cập nhật 24/11)
+
+| Ngày | Việc | Tình trạng 24/11 |
+| --- | --- | --- |
+| T3 24/11 | TV1 gộp phần TV3, TV4, TV5 vào `main` (nhánh `ql/hoan-thien-tv3-4-5`, xem `docs/sua_doi_tv3_4_5.md`); chạy workflow có tích `upload` | Đang làm |
+| T4 25/11 | Mọi file kết quả thật trên HF (TV3, TV4, TV5 đã có); TV6 thay stub bằng file thật; TV2 thêm quy tắc đối chiếu `num_ili` | |
+| T5 26/11 18:00 | **Khóa số liệu**: workflow có upload, rồi `tag_hf.py v2026-11-26`; mọi số trong báo cáo, slide, dashboard lấy từ tag này | |
+| T5 26/11 tối | TV3, TV4, TV5 chạy lại pipeline trên tag `v2026-11-26` (TV4 thêm `--sim`), cập nhật số trong chương | |
+| T6 27/11 12:00 | Đủ chương gửi TV1; TV1 ghép báo cáo | |
+| T7 28/11 | Đọc chéo, sửa; tập thuyết trình (tối) | |
+| CN 29/11 | **Nộp báo cáo PDF và slide** | |
+
+Các lượt cập nhật tự động sáng thứ Bảy 28/11 và Chủ nhật 29/11 vẫn chạy và tạo tag mới, nhưng báo cáo chỉ dùng tag `v2026-11-26`.
 
 ## 2. Phạm vi: làm gì, hoãn gì
 
@@ -98,7 +112,7 @@ Mỗi luồng đi độc lập từ hôm nay. Ô **in đậm** là thứ giao ch
 
 1. **TV2 `load.py` (15/11 trưa) và `business/` v1 (17/11).** Đây là việc duy nhất nhiều người phụ thuộc. **TV1 đã xong mảng chính nên hỗ trợ TV2**: TV1 làm phần đọc thời tiết, EPA, vaccine trong `clean/`; TV2 làm Delphi, star schema, kiểm tra chất lượng. Hai người chia file, không sửa chung một file.
 2. **TV3 mốc mùa thật (17/11)**: TV4 cần cho Shaman, TV5 cần cho nhãn khởi phát. Trễ thì TV4, TV5 dùng stub và ghi chú.
-3. **Khóa số liệu 19/11 18:00.** Sau giờ này không chạy lại mô hình; mọi số trong báo cáo, slide, dashboard lấy từ tag `v2026-11-19`.
+3. **Khóa số liệu 26/11 18:00** (gốc 19/11). Sau giờ này không chạy lại mô hình; mọi số trong báo cáo, slide, dashboard lấy từ tag `v2026-11-26`.
 
 ## 7. Ai sở hữu file nào
 
@@ -158,3 +172,7 @@ Kế hoạch v2 vẫn là tài liệu gốc cho định nghĩa và phương phá
 | Mục 10: phân công 6 vai trò cũ | Theo `docs/phan_cong.md` |
 | Mục 11.2: lộ trình 6 tuần | Theo file này: về đích 22/11/2026, phạm vi ở mục 2 |
 | Mục 6: tuần khởi phát = tuần đầu của 3 tuần liên tiếp `ili_pct` ≥ mức nền; chưa nói cách xác định "tuần không có cúm" | Mức nền giữ nguyên (trung bình + 2 độ lệch chuẩn của tuần ngoài mùa theo lịch trong 3 mùa trước, bỏ 2020-21). **Thêm điều kiện:** tuần đầu của chuỗi 3 tuần phải có `lab_pct_pos` ≥ 2%; bang thiếu số xét nghiệm thì lấy trung vị các bang cùng vùng HHS trong tuần đó. Điều kiện xét nghiệm chỉ áp dụng từ mùa 2016-17 (trước đó chưa có số xét nghiệm). Lý do: sau COVID, ILI ngoài mùa tăng (trung vị 0,80 → 1,36) dù không có cúm, nên mùa 2021-22 có 22 bang "khởi phát" ở tuần 40 trong khi xét nghiệm dương tính gần 0%; thêm điều kiện còn 2 bang |
+| Mục 6: `onset_week`, `peak_week` kiểu ngày (từ điển dữ liệu cũ) | Là **số tuần trong mùa** (1 = tuần MMWR 40), vì TV4 (Shaman) và TV5 (nhãn) tính theo số tuần. Ngày tương ứng ở cột thêm `onset_date`, `peak_date` của `season_milestones.parquet` (dashboard dùng). Chốt 24/11 |
+| Mục 7: TV5 sinh lịch sử nhập viện giả lập 2010–2023 để huấn luyện | **Không làm**: NHSN thật đã có 3 mùa đủ 51 bang (2022-23 đến 2024-25, 532 tuần mức Cao để huấn luyện), test trên 2025-26 và backtest như lúc công bố. Giả lập chỉ dùng ở TV4 để kiểm tra phương pháp. Chốt 24/11, ghi trong Chương 5 |
+| Mục 7, 9: TV5 tự tính nhãn khởi phát | Nhãn khởi phát lấy từ `season_milestones.parquet` của TV3 (một định nghĩa chung cho cả nhóm). Chốt 24/11 |
+| Mục 7: bộ dữ liệu chèn lỗi | TV4 dựng bộ riêng theo tình huống thực tế (`04_risk_factors.py --corrupt`), TV2 chấm bằng `02_warehouse.py --steps inject`. Kết quả 24/11: bắt 233/285, bỏ sót 52 ô `num_ili` |
