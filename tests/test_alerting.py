@@ -58,3 +58,63 @@ def test_onset_label_from_tv3_milestones():
     dt = (o["onset_week_ili"].iloc[0] - pd.Series(weeks)).dt.days
     y = np.where(dt > 0, (dt <= 14).astype(float), np.nan)
     assert y[0] == 0 and y[1] == 1 and y[2] == 1 and np.isnan(y[3])
+
+
+# ---------- mô hình vận hành (live) và số liệu chương ----------
+def _toy_df(seed=0):
+    """Bảng giả: 4 bang x 6 mùa x 30 tuần, nhãn vượt ngưỡng phụ thuộc rate_log."""
+    from fluwatch.alerting.models import EXCEED_FEATS, ONSET_FEATS
+    rng = np.random.default_rng(seed)
+    seasons = ["2021-22", "2022-23", "2023-24", "2024-25", "2025-26", "2026-27"]
+    rows = []
+    for si, s in enumerate(seasons):
+        start = pd.Timestamp(f"{2021 + si}-10-02")
+        for st in ["ca", "tx", "ny", "wa"]:
+            for k in range(30):
+                rows.append({"state": st, "season": s, "week": start + pd.Timedelta(weeks=k), "season_week": k + 1})
+    df = pd.DataFrame(rows)
+    feats = sorted(set(sum(EXCEED_FEATS.values(), []) + sum(ONSET_FEATS.values(), [])) - {"season_week"})
+    for c in feats:
+        df[c] = rng.normal(size=len(df))
+    for lab in ("y_exceed_1w", "y_exceed_2w", "y_onset_next2w"):
+        df[lab] = (df["rate_log"] + rng.normal(0, 0.5, len(df)) > 1).astype(float)
+    df["train_ok"] = True
+    df["is_preliminary"] = False
+    df["onset_week_ili"] = pd.NaT
+    return df
+
+
+def test_live_model_never_sees_current_season():
+    from fluwatch.alerting.models import fit_all, last_complete_season
+    df = _toy_df()
+    assert last_complete_season(df) == "2025-26"
+    # nếu mùa hiện tại bị học, đổi nhãn của nó sẽ đổi mô hình; mô hình vận hành phải giữ nguyên
+    a = fit_all(df, train_last="2025-26")
+    df2 = df.copy()
+    cur = df2["season"] == "2026-27"
+    df2.loc[cur, "y_exceed_1w"] = 1 - df2.loc[cur, "y_exceed_1w"]
+    b = fit_all(df2, train_last="2025-26")
+    ca = a[("y_exceed_1w", "base")]["model"][-1].coef_
+    cb = b[("y_exceed_1w", "base")]["model"][-1].coef_
+    assert np.allclose(ca, cb)
+    assert a[("y_exceed_1w", "base")]["trained_through"] == "2025-26"
+
+
+def test_forecast_uses_live_model_only_for_live_rows():
+    from fluwatch.alerting.models import build_alert_forecast, fit_all
+    df = _toy_df()
+    fc = build_alert_forecast(df, fit_all(df), fit_all(df, train_last="2025-26"))
+    t = pd.crosstab(fc["split"], fc["trained_through"])
+    assert set(t.columns) == {"2024-25", "2025-26"}
+    assert t.loc["live", "2025-26"] > 0 and t.loc["live"].get("2024-25", 0) == 0
+    assert t.loc[["train", "test"], "2025-26"].sum() == 0
+    assert fc["prob_exceed"].between(0, 1).all() and set(fc["horizon"]) == {1, 2}
+
+
+def test_chapter_number_formatting():
+    from fluwatch.alerting.chapter_numbers import _n, _p
+    assert _n(0.9927) == "0,993"
+    assert _p(6.2e-17) == "p < 10^-16"
+    assert _p(0.0099) == "p = 0,010"
+    assert _p(0.00055) == "p = 0,0006"
+    assert _p(None) == "–"

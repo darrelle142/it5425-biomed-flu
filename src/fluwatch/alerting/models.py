@@ -65,11 +65,21 @@ def youden_threshold(y, p) -> float:
     return float(thr[np.argmax(tpr - fpr)])
 
 
-def fit_all(df: pd.DataFrame) -> dict:
-    """Huấn luyện mọi biến thể. Trả {(tên_nhãn, biến_thể): {model, feats, threshold, n_train}}."""
+def last_complete_season(df: pd.DataFrame) -> str:
+    """Mùa gần nhất đã kết thúc = mùa liền trước mùa mới nhất trong dữ liệu (mùa mới nhất đang diễn ra)."""
+    seasons = sorted(df["season"].dropna().unique())
+    return seasons[-2]
+
+
+def fit_all(df: pd.DataFrame, train_last: str = TRAIN_LAST) -> dict:
+    """Huấn luyện mọi biến thể trên các mùa <= train_last. Trả {(nhãn, biến_thể): {model, feats, threshold, ...}}.
+
+    train_last = TRAIN_LAST: mô hình ĐÁNH GIÁ (mùa TEST_SEASON để riêng, số liệu Chương 5).
+    train_last = last_complete_season(df): mô hình VẬN HÀNH, học mọi mùa đã kết thúc, chỉ dùng cho dự báo 'live'.
+    """
     out = {}
-    train_ex = df["season"].between(EXCEED_TRAIN_FIRST, TRAIN_LAST)
-    train_on = df["season"] <= TRAIN_LAST
+    train_ex = df["season"].between(EXCEED_TRAIN_FIRST, train_last)
+    train_on = df["season"] <= train_last
     specs = [(f"y_exceed_{h}w", v, EXCEED_FEATS[v], train_ex) for h in (1, 2) for v in EXCEED_FEATS]
     specs += [("y_onset_next2w", v, ONSET_FEATS[v], train_on) for v in ONSET_FEATS]
     for label, variant, feats, mask in specs:
@@ -80,7 +90,7 @@ def fit_all(df: pd.DataFrame) -> dict:
         p = mdl.predict_proba(tr[feats])[:, 1]
         out[(label, variant)] = {
             "model": mdl, "feats": feats, "n_train": int(len(tr)), "n_pos": int(tr[label].sum()),
-            "threshold": youden_threshold(tr[label].astype(int), p),
+            "threshold": youden_threshold(tr[label].astype(int), p), "trained_through": train_last,
         }
     return out
 
@@ -115,16 +125,30 @@ def quick_auc(df, fitted, label, variant, season_mask):
     return roc_auc_score(te[label].astype(int), f["model"].predict_proba(te[f["feats"]])[:, 1]), len(te)
 
 
-def build_alert_forecast(df: pd.DataFrame, fitted: dict) -> pd.DataFrame:
-    """Bảng alert_forecast: bang x tuần phát hành x tầm (1, 2)."""
-    onset = predict_best(df, fitted, "y_onset_next2w", order=["full", "base"])
+def _predict_split(df, fitted, fitted_live, label, order=PRIORITY):
+    """Dòng 'live' dùng mô hình vận hành (nếu có), các dòng khác dùng mô hình đánh giá."""
+    live = (split_of(df["season"]) == "live").to_numpy()
+    res = predict_best(df, fitted, label, order)
+    res["trained_through"] = np.where(res["prob"].notna(), TRAIN_LAST, None)
+    if fitted_live is not None and live.any():
+        rl = predict_best(df[live], fitted_live, label, order)
+        res.loc[live, ["prob", "model", "thr"]] = rl[["prob", "model", "thr"]].to_numpy()
+        tl = next(iter(fitted_live.values()))["trained_through"]
+        res.loc[live, "trained_through"] = np.where(rl["prob"].notna(), tl, None)
+    return res
+
+
+def build_alert_forecast(df: pd.DataFrame, fitted: dict, fitted_live: dict | None = None) -> pd.DataFrame:
+    """Bảng alert_forecast: bang x tuần phát hành x tầm (1, 2).
+    Dòng train/test: mô hình đánh giá; dòng live: mô hình vận hành (học mọi mùa đã kết thúc) nếu được truyền vào."""
+    onset = _predict_split(df, fitted, fitted_live, "y_onset_next2w", order=["full", "base"])
     # đã khởi phát (và đã xác nhận) thì xác suất khởi phát không còn ý nghĩa
     started = df["onset_week_ili"].notna() & (df["onset_week_ili"] + pd.Timedelta(days=14) <= df["week"])
     onset.loc[started, "prob"] = np.nan
 
     frames = []
     for h in (1, 2):
-        e = predict_best(df, fitted, f"y_exceed_{h}w")
+        e = _predict_split(df, fitted, fitted_live, f"y_exceed_{h}w")
         p, t = e["prob"], e["thr"]
         level = np.where(p >= t, "cao", np.where(p >= t / 2, "trung_binh", "thap"))
         fr = pd.DataFrame({
@@ -132,7 +156,7 @@ def build_alert_forecast(df: pd.DataFrame, fitted: dict) -> pd.DataFrame:
             "prob_exceed": p, "prob_onset": onset["prob"],
             "alert_level": np.where(p.notna(), level, None),
             "target_week": df["week"] + pd.Timedelta(weeks=h),
-            "model": e["model"], "split": split_of(df["season"]),
+            "model": e["model"], "trained_through": e["trained_through"], "split": split_of(df["season"]),
             "is_preliminary": df["is_preliminary"], "is_stub": False,
         })
         frames.append(fr[p.notna()])

@@ -73,6 +73,38 @@ def fig_roc(ev, roc, out):
     fig.savefig(out); plt.close(fig)
 
 
+def fig_pr(ev, pr, out):
+    """Precision-recall: khi ca dương hiếm (~5%), cho biết bao nhiêu phần trăm cảnh báo là đúng."""
+    fig, axes = plt.subplots(1, 2, figsize=(9.2, 5.0), sharey=True)
+    for ax, (lab, name) in zip(axes, [("y_exceed_1w", "1 tuần tới"), ("y_exceed_2w", "2 tuần tới")]):
+        t = ev["targets"][lab]
+        base_rate = t["base_rate"]
+        ax.axhline(base_rate, color=MUTED, lw=1, ls=(0, (4, 3)), zorder=1)
+        ax.text(0.01, base_rate + 0.012, f"đoán bừa ({_vn(base_rate * 100, 1)}% dòng là dương)", ha="left", va="bottom",
+                fontsize=7.5, color=MUTED)
+        for m in ["persistence", "hien_trang", "nhsn", "base", "full"]:
+            r = pr[(pr["target"] == lab) & (pr["model"] == m)]
+            ls = (0, (5, 2)) if m == "full" else ((0, (1, 1.5)) if m == "hien_trang" else "-")
+            ax.plot(r["recall"], r["precision"], color=MODEL_COLOR[m], ls=ls, drawstyle="steps-post",
+                    lw=1.8 if m not in ("persistence", "hien_trang") else 1.3,
+                    label=f"{MODEL_LABEL[m]}: AP {_vn(t['models'][m]['average_precision'])}")
+        b = t["models"]["base"]["at_train_threshold"]
+        ax.scatter([b["sensitivity"]], [b["ppv"]], s=46, color=OI["verm"], zorder=5, edgecolor="white", linewidth=1.2)
+        ax.annotate(f"ngưỡng đang dùng (mô hình ILI):\n{_vn(b['ppv'] * 100, 0)}% cảnh báo đúng, bắt {_vn(b['sensitivity'] * 100, 0)}% ca",
+                    (b["sensitivity"], b["ppv"]), xytext=(0.03, 0.13), fontsize=8, color=OI["verm"],
+                    arrowprops=dict(arrowstyle="-", color=OI["verm"], lw=0.8))
+        ax.set_title(f"Dự báo {name} ({t['n_pos']} ca dương / {t['n']} dòng)", fontsize=9.5, loc="left", color=INK)
+        ax.set_xlabel("Tỉ lệ ca thật được bắt (recall = độ nhạy)")
+        ax.set_xlim(0, 1.01); ax.set_ylim(0, 1.02)
+        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=1, fontsize=7.4, frameon=False, handlelength=2.2)
+    axes[0].set_ylabel("Tỉ lệ cảnh báo đúng (precision)")
+    b1 = ev["targets"]["y_exceed_1w"]["models"]["base"]["at_train_threshold"]
+    _title(fig, f"Ở ngưỡng đang dùng, khoảng 1/2 cảnh báo là đúng ({_vn(b1['ppv'] * 100, 0)}%, tầm 1 tuần), đổi lại gần như không bỏ sót",
+           f"Mùa test {ev['test_season']}. AP (average precision) = diện tích dưới đường; đoán bừa chỉ đạt bằng tỉ lệ ca dương")
+    fig.tight_layout(rect=(0, 0, 1, 0.93))
+    fig.savefig(out); plt.close(fig)
+
+
 def _wilson(k, n, z=1.96):
     if n == 0:
         return np.nan, np.nan
@@ -171,10 +203,12 @@ def fig_backtest(ev, bt, lead, out):
     fig.savefig(out); plt.close(fig)
 
 
-def make_figures(df, fitted, ev, roc, bt, lead, outdir: Path):
+def make_figures(df, fitted, ev, roc, bt, lead, outdir: Path, pr=None):
     outdir.mkdir(parents=True, exist_ok=True)
     _style()
     fig_roc(ev, roc, outdir / "tv5_roc_compare.png")
+    if pr is not None:
+        fig_pr(ev, pr, outdir / "tv5_pr_curve.png")
     fig_calibration(df, fitted, ev, outdir / "tv5_calibration_curve.png")
     if len(bt):
         fig_backtest(ev, bt, lead, outdir / "tv5_backtest_timeline.png")

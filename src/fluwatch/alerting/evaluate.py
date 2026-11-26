@@ -7,7 +7,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from scipy import stats
-from sklearn.metrics import average_precision_score, roc_curve
+from sklearn.metrics import average_precision_score, precision_recall_curve, roc_curve
 
 from fluwatch.alerting.models import EXCEED_FEATS, ONSET_FEATS, TEST_SEASON
 
@@ -109,9 +109,36 @@ def _scores(df, fitted, label, variants):
     return s
 
 
-def _eval_target(df, fitted, label, variants, baselines, full_feats):
+def _test_rows(df, label, full_feats):
+    """Dòng test chung cho mọi mô hình: mùa test, có nhãn, đủ đặc trưng của bản 'full'."""
     te = df[df["train_ok"] & (df["season"] == TEST_SEASON) & df[label].notna() & df[full_feats].notna().all(axis=1)]
-    te = te.reset_index(drop=True)
+    return te.reset_index(drop=True)
+
+
+def _exceed_baselines():
+    return {"persistence": lambda t: (t["cdc_level"] >= 3).astype(float).to_numpy(),
+            "hien_trang": lambda t: t["rate_ratio"].to_numpy()}
+
+
+def pr_points(df: pd.DataFrame, fitted: dict) -> pd.DataFrame:
+    """Điểm đường precision-recall cho vượt ngưỡng 1-2 tuần, cùng tập dòng test với ROC.
+    Cột: precision, recall, model, target, base_rate (đường đoán bừa)."""
+    rows = []
+    for h in (1, 2):
+        label = f"y_exceed_{h}w"
+        te = _test_rows(df, label, EXCEED_FEATS["full"])
+        y = te[label].astype(int).to_numpy()
+        scores = _scores(te, fitted, label, ["nhsn", "base", "full"])
+        scores.update({k: fn(te) for k, fn in _exceed_baselines().items()})
+        for name, s in scores.items():
+            prec, rec, _ = precision_recall_curve(y, s)
+            rows.append(pd.DataFrame({"precision": prec, "recall": rec, "model": name, "target": label,
+                                      "base_rate": y.mean()}))
+    return pd.concat(rows, ignore_index=True)
+
+
+def _eval_target(df, fitted, label, variants, baselines, full_feats):
+    te = _test_rows(df, label, full_feats)
     y = te[label].astype(int).to_numpy()
     states = te["state"].to_numpy()
     scores = _scores(te, fitted, label, variants)
@@ -164,9 +191,7 @@ def evaluate(df: pd.DataFrame, fitted: dict) -> tuple[dict, pd.DataFrame]:
         label = f"y_exceed_{h}w"
         # hai mô hình nền: persistence (tuần này đã ở mức Cao: 0/1) và hien_trang (tỉ lệ nhập viện / ngưỡng Cao hiện
         # tại, liên tục) - mô hình nền mạnh: mô hình chỉ có ý nghĩa nếu hơn được việc nhìn số nhập viện hiện tại
-        r, roc = _eval_target(df, fitted, label, ex_variants,
-                              {"persistence": lambda t: (t["cdc_level"] >= 3).astype(float).to_numpy(),
-                               "hien_trang": lambda t: t["rate_ratio"].to_numpy()}, EXCEED_FEATS["full"])
+        r, roc = _eval_target(df, fitted, label, ex_variants, _exceed_baselines(), EXCEED_FEATS["full"])
         out["targets"][label] = r
         rocs.append(roc)
     r, roc = _eval_target(df, fitted, "y_onset_next2w", ["base", "full"],
