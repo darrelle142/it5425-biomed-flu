@@ -3,12 +3,12 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pathlib import Path
-from scipy.stats import gaussian_kde
+from scipy.stats import gaussian_kde, spearmanr
 from scipy.cluster.hierarchy import dendrogram
 from statsmodels.graphics.tsaplots import plot_acf
 
 
-EXCLUDE_SEASON = ['2009-10', '2020-21']
+EXCLUDE_SEASONS = ['2009-10', '2020-21']
 
 def setup_style():
     plt.rcParams.update({
@@ -29,7 +29,7 @@ def plot_season_overlay(df: pd.DataFrame, output_dir: Path, current_season: str 
         'ili_pct': ('ili_pct', 'mean'),
         'is_preliminary': ('is_preliminary', 'any')
     }
-    nat = df[~df['season'].isin(EXCLUDE_SEASON)].groupby(['season', 'season_week'], as_index=False).agg(**agg_dict).sort_values(['season', 'season_week'])
+    nat = df[~df['season'].isin(EXCLUDE_SEASONS)].groupby(['season', 'season_week'], as_index=False).agg(**agg_dict).sort_values(['season', 'season_week'])
     for season, grp in nat.groupby('season'):
         if grp.empty:
             continue
@@ -71,7 +71,7 @@ def plot_severity_boxplot(milestones: pd.DataFrame, output_dir: Path):
     setup_style()
 
     fig, ax = plt.subplots(figsize=(11, 5))
-    sub = milestones[~milestones['season'].isin(EXCLUDE_SEASON + ['2026-27'])].copy()
+    sub = milestones[~milestones['season'].isin(EXCLUDE_SEASONS + ['2026-27'])].copy()
     sub = sub[sub['source'] == 'ili'].sort_values('season')
 
     sns.boxplot(data=sub, x='season', y='peak_value', color='#56B4E9', ax=ax, fliersize=3)
@@ -89,7 +89,7 @@ def plot_onset_distribution(milestones: pd.DataFrame, output_dir: Path):
     setup_style()
 
     fig, ax = plt.subplots(figsize=(12, 5))
-    sub = milestones[(~milestones['season'].isin(EXCLUDE_SEASON + ['2026-27'])) & (milestones['onset_week'].notna())]
+    sub = milestones[(~milestones['season'].isin(EXCLUDE_SEASONS + ['2026-27'])) & (milestones['onset_week'].notna())]
 
     ax.hist(sub['onset_week'], bins=20, color='#0072B2', edgecolor='white', alpha=0.85)
     median_w = sub['onset_week'].median()
@@ -107,7 +107,7 @@ def plot_onset_ridgeline(milstones: pd.DataFrame, output_dir: Path):
     setup_style()
 
     fig, ax = plt.subplots(figsize=(10, 7))
-    sub = milstones[(~milstones['season'].isin(EXCLUDE_SEASON + ['2026-27'])) & (milstones['onset_week'].notna())]
+    sub = milstones[(~milstones['season'].isin(EXCLUDE_SEASONS + ['2026-27'])) & (milstones['onset_week'].notna())]
     seasons = sorted(sub['season'].unique(), reverse=True)
 
     x_grid = np.linspace(1, 35, 300)
@@ -209,4 +209,54 @@ def plot_cluster_dendrogram(Z: np.ndarray, state_labels: list, output_dir: Path)
 
     plt.tight_layout()
     fig.savefig(output_dir / 'dendrogram.png')
+    plt.close(fig)
+
+def plot_spatial_onset_spread(milestones: pd.DataFrame, state_centroids: dict, output_dir: Path):
+    setup_style()
+
+    sub = milestones[(~milestones['season'].isin(EXCLUDE_SEASONS + ['2026-27'])) & (milestones['onset_week'].notna())].copy()
+    sub['state_upper'] = sub['state'].str.upper()
+
+    coord_df = pd.DataFrame.from_dict(state_centroids, orient='index', columns=['lat', 'lon']).reset_index()
+    coord_df.rename(columns={'index': 'state_upper'}, inplace=True)
+
+    agg = sub.groupby('state_upper', as_index=False)['onset_week'].median().merge(coord_df, on='state_upper')
+    conus = agg[~agg['state_upper'].isin(['AK', 'HI'])].copy()
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5.2), sharey=True)
+    configs = [
+        ('lat', 'Latitude (°N, South → North)', '#0072B2'),
+        ('lon', 'Longitude (°W, West → East)', '#009E73')
+    ]
+
+    for ax, (col, xlabel, color) in zip(axes, configs):
+        r_s, p_s = spearmanr(conus[col], conus['onset_week'])
+        sns.regplot(
+            data=conus, x=col, y='onset_week', ax=ax,
+            scatter_kws={'alpha': 0.75, 's': 45, 'color': color},
+            line_kws={'color': '#D55E00', 'linewidth': 1.8}
+        )
+
+        conus_sorted = conus.sort_values(['onset_week', col]).reset_index(drop=True)
+        prev_x, prev_y, toggle = -999.0, -999.0, 1
+        for _, row in conus_sorted.iterrows():
+            x_val, y_val = row[col], row['onset_week']
+            if abs(y_val - prev_y) < 0.35 and abs(x_val - prev_x) < 2.2:
+                y_offset = -0.34 if toggle > 0 else 0.16
+                toggle *= -1
+            else:
+                y_offset = 0.14
+                toggle = 1
+            ax.text(x_val, y_val + y_offset, row['state_upper'], fontsize=7, ha='center', alpha=0.85)
+            prev_x, prev_y = x_val, y_val
+
+        ax.set_xlabel(xlabel)
+        ax.set_title(f"Spearman = {r_s:.3f} (p = {p_s:.4f})")
+
+    axes[0].set_ylabel("Median epidemic onset week across seasons")
+    axes[1].set_ylabel("")
+    fig.suptitle("Geographic gradient of influenza epidemic onset across contiguous US jurisdictions", fontweight='bold', y=1.02)
+
+    plt.tight_layout()
+    fig.savefig(output_dir / 'spatial_onset_correlation.png', bbox_inches='tight')
     plt.close(fig)

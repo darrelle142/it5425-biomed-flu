@@ -35,6 +35,13 @@ if not dunn_df.empty:
     print("-> Các cặp vùng HHS khác biệt có ý nghĩa (Dunn p_adj < 0.05):")
     print(dunn_df[dunn_df['significant_005']])
 
+nat_mk_df, state_mk_df = run_onset_trend_mann_kendall(season_milestones)
+spatial_overall_df, spatial_season_df = run_spatial_onset_correlation(season_milestones, dim_state)
+nat_mk_df.to_csv(DATA_DIR / 'trend_mann_kendall_national.csv', index=False)
+state_mk_df.to_csv(DATA_DIR / 'trend_mann_kendall_by_state.csv', index=False)
+spatial_overall_df.to_csv(DATA_DIR / 'spatial_onset_overall.csv', index=False)
+spatial_season_df.to_csv(DATA_DIR / 'spatial_onset_by_season.csv', index=False)
+
 print("5. Xuất các biểu đồ EDA")
 plot_season_overlay(df_week, FIG_DIR)
 plot_severity_boxplot(season_milestones, FIG_DIR)
@@ -43,5 +50,6 @@ plot_onset_ridgeline(season_milestones, FIG_DIR)
 plot_lag_and_acf(df_week, FIG_DIR)
 plot_state_week_heatmap(df_week, season_milestones, FIG_DIR)
 plot_cluster_dendrogram(Z, meta['states'], FIG_DIR)
+plot_spatial_onset_spread(season_milestones, US_STATE_CENTROIDS, FIG_DIR)
 
 print("Hoàn tất pipeline 03_season_eda")
