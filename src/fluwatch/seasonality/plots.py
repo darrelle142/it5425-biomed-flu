@@ -108,9 +108,11 @@ def plot_onset_ridgeline(milstones: pd.DataFrame, output_dir: Path):
 
     fig, ax = plt.subplots(figsize=(10, 7))
     sub = milstones[(~milstones['season'].isin(EXCLUDE_SEASON + ['2026-27'])) & (milstones['onset_week'].notna())]
+    seasons = sorted(sub['season'].unique(), reverse=True)
 
     x_grid = np.linspace(1, 35, 300)
-    overlap = 0.65
+    max_height = 0.72
+    row_step = 0.5
 
     for idx, season in enumerate(sorted(sub['season'].unique(), reverse=True)):
         vals = sub[sub['season'] == season]['onset_week'].values
@@ -118,21 +120,26 @@ def plot_onset_ridgeline(milstones: pd.DataFrame, output_dir: Path):
             continue
 
         kde = gaussian_kde(vals, bw_method=0.45)
-        y_vals = kde(x_grid)
-        y_vals = y_vals / y_vals.max() * overlap
-        baseline_y = idx * 0.55
+        raw_y = kde(x_grid)
+        y_vals = raw_y / raw_y.max() * max_height
+        baseline_y = idx * row_step
 
-        ax.fill_between(x_grid, baseline_y, baseline_y + y_vals, color='#0072B2', alpha=0.65, zorder=idx+1)
-        ax.plot(x_grid, baseline_y + y_vals, color='white', linewidth=1.2, zorder=idx+2)
-        ax.axhline(baseline_y, color='#BDBDBD', linewidth=0.6, zorder=idx)
+        z_base = (len(seasons) - idx) * 10
+
+        ax.fill_between(x_grid, baseline_y, baseline_y + y_vals, color='white', alpha=1, zorder=z_base)
+        ax.fill_between(x_grid, baseline_y, baseline_y + y_vals, color='#0072B2', alpha=0.78, zorder=z_base + 1)
+        ax.plot(x_grid, baseline_y + y_vals, color='white', linewidth=1.2, zorder=z_base + 2)
+        ax.axhline(baseline_y, color='#BDBDBD', linewidth=0.6, zorder=z_base - 1)
 
         med = np.median(vals)
-        ax.plot([med, med], [baseline_y, baseline_y + overlap * 0.65], color='#D55E00', linestyle='--', linewidth=1.5, zorder=idx+3)
-        ax.text(0.5, baseline_y + 0.08, season, fontweight='bold', fontsize=9, va='bottom', ha='right')
+        med_height = kde([med])[0] / raw_y.max() * max_height
+        ax.plot([med, med], [baseline_y, baseline_y + med_height], color='#D55E00', linestyle='--', linewidth=1.5, zorder=z_base + 3)
+        ax.text(0.4, baseline_y + 0.06, season, fontweight='bold', fontsize=9, va='bottom', ha='right')
 
     ax.set_yticks([])
     ax.spines['left'].set_visible(False)
     ax.set_xlim(1, 35)
+    ax.set_ylim(-0.05, (len(seasons) - 1) * row_step + max_height + 0.1)
     ax.set_xlabel("Onset week (Weeks since MMWR week 40)")
     ax.set_title("Seasonal distribution of epidemic onset weeks shifts notably across influenza seasons")
 

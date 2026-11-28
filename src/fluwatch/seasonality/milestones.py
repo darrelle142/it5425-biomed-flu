@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 
+
 # severity = dinh rate_flu (NHSN). NHSN du 51 bang tu 2020-21 (mua bi loai); 2019-20 chi 8 bang -> chi tinh tu mua nay
 SEVERITY_FIRST_SEASON = '2021-22'
-
 
 def mask_sparse_ili(df: pd.DataFrame, max_missing_ratio=0.3):
     df = df.copy()
@@ -26,10 +26,18 @@ def prepare_signal(df: pd.DataFrame, max_missing_ratio=0.3):
 
     return df
 
-def compute_baselines(df: pd.DataFrame):
+def get_non_flu_mask(df: pd.DataFrame, lab_threshold=2, min_consec=3, smooth_window=3):
+    smooth_lab = df['lab_pct_pos'].rolling(window=smooth_window, center=True, min_periods=1).median()
+    below = (smooth_lab < lab_threshold).fillna(False)
+
+    run_id = (~below).cumsum()
+    run_lengths = below.groupby(run_id).transform('sum')
+
+    return below & (run_lengths >= min_consec)
+
+def compute_baselines(df: pd.DataFrame, lab_threshold=2, min_consec=3, smooth_window=3):
     df = df.sort_values(['state', 'season', 'season_week']).copy()
     seasons = sorted(df['season'].unique())
-    off_mask = (df['season_week'] >= 34) | (df['season_week'] <= 3)
 
     records = []
     for (state, season), grp in df.groupby(['state', 'season'], sort=False):
@@ -46,16 +54,29 @@ def compute_baselines(df: pd.DataFrame):
         prev_candidates = [s for s in seasons if s < season and s not in ('2009-10', '2020-21')]
         val_col = 'ili_pct' if source == 'ili' else 'ed_pct_flu'
 
-        valid_prev_seasons = []
+        valid_samples = []
         for ps in reversed(prev_candidates):
-            s_vals = df[(df['state'] == state) & (df['season'] == ps) & off_mask][val_col].dropna()
+            s_grp = df[(df['state'] == state) & (df['season'] == ps)]
+
+            lab_mask = get_non_flu_mask(s_grp, lab_threshold, min_consec, smooth_window)
+            s_vals = s_grp.loc[lab_mask, val_col].dropna()
+
+            if len(s_vals) <= 5:
+                cal_mask = (s_grp['season_week'] >=34) | (s_grp['season_week'] <= 3)
+                s_vals = s_grp.loc[cal_mask, val_col].dropna()
+
             if len(s_vals) > 5:
-                valid_prev_seasons.append(ps)
-            if len(valid_prev_seasons) == 3:
+                valid_samples.append(s_vals)
+                
+            if len(valid_samples) == 3:
                 break
 
-        sub = df[(df['state'] == state) & (df['season'].isin(valid_prev_seasons)) & off_mask][val_col].dropna()
-        baseline = sub.mean() + 2 * sub.std(ddof=1) if len(valid_prev_seasons) > 0 else np.nan
+        if valid_samples:
+            sub = pd.concat(valid_samples)
+            baseline = sub.mean() + 2 * sub.std(ddof=1)
+        else:
+            baseline = np.nan
+
         records.append({
             'state': state,
             'season': season,
