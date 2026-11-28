@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 from itertools import combinations
 from scipy.stats import kruskal, norm, rankdata, kendalltau, theilslopes, spearmanr, pearsonr
+from fluwatch.seasonality.milestones import *
 
 
-EXCLUDE_SEASONS = ['2009-10', '2020-21', '2026-27']
 US_STATE_CENTROIDS = {
     'AL': (32.8067, -86.7911), 'AK': (61.3707, -152.4044), 'AZ': (33.7298, -111.4312),
     'AR': (34.9697, -92.3731), 'CA': (36.1162, -119.6816), 'CO': (39.0598, -105.3111),
@@ -25,8 +25,48 @@ US_STATE_CENTROIDS = {
     'WV': (38.4912, -80.9545), 'WI': (44.2685, -89.6165), 'WY': (42.7560, -107.3025),
 }
 
+
+def get_onset_week_col(milestones_df: pd.DataFrame) -> str:
+    if 'onset_season_week' in milestones_df.columns:
+        return 'onset_season_week'
+    return 'onset_week'
+
+
+def filter_completed_milestones(milestones_df: pd.DataFrame) -> pd.DataFrame:
+    completed_mask = ~milestones_df['season'].isin(EXCLUDED_HIST_SEASONS)
+    if 'peak_week' in milestones_df.columns:
+        season_has_peak = milestones_df.groupby('season')['peak_week'].transform(lambda s: s.notna().any())
+        completed_mask = completed_mask & season_has_peak
+    return milestones_df[completed_mask].copy()
+
+
+def resolve_state_coords(dim_state: pd.DataFrame = None) -> pd.DataFrame:
+    if dim_state is not None and {'lat', 'lon'}.issubset(dim_state.columns):
+        coord_df = dim_state[['state', 'lat', 'lon']].copy()
+        coord_df['state_upper'] = coord_df['state'].str.upper()
+        return coord_df[['state_upper', 'lat', 'lon']].drop_duplicates()
+
+    coord_df = pd.DataFrame.from_dict(US_STATE_CENTROIDS, orient='index', columns=['lat', 'lon']).reset_index()
+    coord_df.rename(columns={'index': 'state_upper'}, inplace=True)
+    return coord_df
+
+
+def _holm_adjust(p_raw: np.ndarray) -> np.ndarray:
+    m = len(p_raw)
+    if m == 0:
+        return p_raw
+    order = np.argsort(p_raw)
+    sorted_p = p_raw[order]
+    adj_sorted = np.minimum(1.0, np.maximum.accumulate(sorted_p * (m - np.arange(m))))
+    adj = np.empty_like(adj_sorted)
+    adj[order] = adj_sorted
+    return adj
+
+
 def run_dunn_posthoc(sub: pd.DataFrame, metric, group_col='hhs_region'):
     df = sub[[group_col, metric]].dropna().copy()
+    df[metric] = pd.to_numeric(df[metric], errors='coerce')
+    df = df.dropna(subset=[metric])
     n = len(df)
     df['rank'] = rankdata(df[metric])
 
@@ -53,22 +93,29 @@ def run_dunn_posthoc(sub: pd.DataFrame, metric, group_col='hhs_region'):
         })
 
     res = pd.DataFrame(rows).sort_values('p_raw').reset_index(drop=True)
-    m = len(res)
-    res['p_adj_holm'] = np.minimum(1, np.maximum.accumulate(res['p_raw'] * (m - np.arange(m)))).round(6)
+    res['p_adj_holm'] = np.round(_holm_adjust(res['p_raw'].to_numpy(dtype=float)), 6)
     res['p_raw'] = res['p_raw'].round(6)
     res['significant_005'] = res['p_adj_holm'] < 0.05
 
     return res
 
+
 def run_hhs_comparisons(milestones_df: pd.DataFrame, dim_state: pd.DataFrame):
-    exclude_seasons = ['2009-10', '2020-21', '2026-27']
-    merged = milestones_df.merge(dim_state[['state', 'hhs_region']], on='state', how='left')
-    merged = merged[~merged['season'].isin(exclude_seasons)]
+    onset_col = get_onset_week_col(milestones_df)
+    merged = filter_completed_milestones(milestones_df).merge(
+        dim_state[['state', 'hhs_region']], on='state', how='left'
+    )
+
+    metrics = [onset_col, 'peak_value']
+    if 'peak_rate_flu' in merged.columns:
+        metrics.append('peak_rate_flu')
 
     kw_results = []
     dunn_frames = []
-    for metric in ['onset_week', 'peak_value']:
-        sub = merged.dropna(subset=[metric, 'hhs_region'])
+    for metric in metrics:
+        sub = merged.dropna(subset=[metric, 'hhs_region']).copy()
+        sub[metric] = pd.to_numeric(sub[metric], errors='coerce')
+        sub = sub.dropna(subset=[metric])
 
         if metric == 'peak_value':
             sub = sub[sub['source'] == 'ili']
@@ -76,12 +123,13 @@ def run_hhs_comparisons(milestones_df: pd.DataFrame, dim_state: pd.DataFrame):
         groups = [grp[metric].values for _, grp in sub.groupby('hhs_region') if len(grp) >= 3]
         if len(groups) > 2:
             stat, p_val = kruskal(*groups)
-            is_sig = p_val < 0.05
+            is_sig = bool(p_val < 0.05)
             kw_results.append({
                 'metric': metric,
+                'n_obs': int(len(sub)),
                 'test': "Kruskal-Wallis across HHS Regions",
-                'statistic': round(stat, 4),
-                'p_value': round(p_val, 6),
+                'statistic': round(float(stat), 4),
+                'p_value': round(float(p_val), 6),
                 'significant_005': is_sig
             })
 
@@ -94,6 +142,7 @@ def run_hhs_comparisons(milestones_df: pd.DataFrame, dim_state: pd.DataFrame):
 
     return kw_df, dunn_all
 
+
 def mann_kendall_single(y, alpha=0.05):
     y = np.asarray(y, dtype=float)
     y = y[~np.isnan(y)]
@@ -105,7 +154,7 @@ def mann_kendall_single(y, alpha=0.05):
             'p_value': np.nan,
             'sens_slope': np.nan,
             'significant_005': False,
-            'trend': 'insufficient_data'
+            'trend': 'Không đủ dữ liệu'
         }
 
     t = np.arange(n)
@@ -115,9 +164,9 @@ def mann_kendall_single(y, alpha=0.05):
     is_sig = bool(p_val < alpha)
 
     if is_sig:
-        trend = 'later_onset' if tau > 0 else 'earlier_onset'
+        trend = 'Khởi phát muộn hơn' if tau > 0 else 'Khởi phát sớm hơn'
     else:
-        trend = 'no_significant_trend'
+        trend = 'Không có xu hướng rõ rệt'
 
     return {
         'n_seasons': n,
@@ -128,18 +177,20 @@ def mann_kendall_single(y, alpha=0.05):
         'trend': trend
     }
 
+
 def run_onset_trend_mann_kendall(milestones_df: pd.DataFrame, alpha=0.05):
-    sub = milestones_df[
-        (~milestones_df['season'].isin(EXCLUDE_SEASONS)) &
-        (milestones_df['onset_week'].notna())
-    ].copy()
+    onset_col = get_onset_week_col(milestones_df)
+    sub = filter_completed_milestones(milestones_df)
+    sub = sub[sub[onset_col].notna()].copy()
+    sub[onset_col] = pd.to_numeric(sub[onset_col], errors='coerce')
+    sub = sub[sub[onset_col].notna()].copy()
     sub['state_upper'] = sub['state'].str.upper()
 
     nat_season = (
         sub.groupby('season', as_index=False)
         .agg(
-            median_onset=('onset_week', 'median'),
-            mean_onset=('onset_week', 'mean'),
+            median_onset=(onset_col, 'median'),
+            mean_onset=(onset_col, 'mean'),
             n_states=('state_upper', 'nunique')
         )
         .sort_values('season')
@@ -149,7 +200,7 @@ def run_onset_trend_mann_kendall(milestones_df: pd.DataFrame, alpha=0.05):
     for metric in ['median_onset', 'mean_onset']:
         res = mann_kendall_single(nat_season[metric].values, alpha=alpha)
         nat_records.append({
-            'scope': 'National',
+            'scope': 'Toàn quốc',
             'metric': metric,
             'first_season': nat_season['season'].iloc[0],
             'last_season': nat_season['season'].iloc[-1],
@@ -159,61 +210,77 @@ def run_onset_trend_mann_kendall(milestones_df: pd.DataFrame, alpha=0.05):
 
     state_records = []
     for state, grp in sub.sort_values('season').groupby('state_upper'):
-        res = mann_kendall_single(grp['onset_week'].values, alpha=alpha)
+        res = mann_kendall_single(grp[onset_col].values, alpha=alpha)
         state_records.append({
             'state': state,
-            'median_onset_all': round(float(grp['onset_week'].median()), 2),
+            'median_onset_all': round(float(grp[onset_col].median()), 2),
             **res
         })
-    state_mk_df = pd.DataFrame(state_records).sort_values('p_value').reset_index(drop=True)
+    state_mk_df = pd.DataFrame(state_records)
+    valid_p = state_mk_df['p_value'].notna()
+    state_mk_df['p_adj_holm'] = np.nan
+    if valid_p.any():
+        state_mk_df.loc[valid_p, 'p_adj_holm'] = np.round(
+            _holm_adjust(state_mk_df.loc[valid_p, 'p_value'].to_numpy(dtype=float)), 6
+        )
+    state_mk_df['significant_holm_005'] = (state_mk_df['p_adj_holm'] < alpha).fillna(False)
+    state_mk_df['trend'] = np.where(
+        state_mk_df['p_value'].isna(),
+        'Không đủ dữ liệu',
+        np.where(
+            ~state_mk_df['significant_holm_005'],
+            'Không có xu hướng rõ rệt',
+            np.where(state_mk_df['tau'] > 0, 'Khởi phát muộn hơn', 'Khởi phát sớm hơn'),
+        ),
+    )
+    state_mk_df = state_mk_df.sort_values('p_value').reset_index(drop=True)
 
     return nat_mk_df, state_mk_df
+
 
 def infer_spread_direction(r_lat, p_lat, r_lon, p_lon, alpha=0.05):
     ns_dir = ""
     if p_lat < alpha:
-        ns_dir = "South -> North" if r_lat > 0 else "North -> South"
+        ns_dir = "Nam -> Bắc" if r_lat > 0 else "Bắc -> Nam"
 
     ew_dir = ""
     if p_lon < alpha:
-        ew_dir = "West -> East" if r_lon > 0 else "East -> West"
+        ew_dir = "Tây -> Đông" if r_lon > 0 else "Đông -> Tây"
 
     if ns_dir and ew_dir:
-        return f"Diagonal spread ({ns_dir} & {ew_dir})"
+        return f"Lan chéo ({ns_dir} & {ew_dir})"
     if ns_dir:
-        return f"Latitudinal spread ({ns_dir})"
+        return f"Lan theo vĩ độ ({ns_dir})"
     if ew_dir:
-        return f"Longitudinal spread ({ew_dir})"
-    
-    return "No significant linear spread direction"
+        return f"Lan theo kinh độ ({ew_dir})"
+
+    return "Không có hướng lan tuyến tính rõ rệt"
+
 
 def run_spatial_onset_correlation(milestones_df: pd.DataFrame, dim_state: pd.DataFrame = None, alpha=0.05):
-    sub = milestones_df[(~milestones_df['season'].isin(EXCLUDE_SEASONS)) &(milestones_df['onset_week'].notna())].copy()
+    onset_col = get_onset_week_col(milestones_df)
+    sub = filter_completed_milestones(milestones_df)
+    sub = sub[sub[onset_col].notna()].copy()
+    sub[onset_col] = pd.to_numeric(sub[onset_col], errors='coerce')
+    sub = sub[sub[onset_col].notna()].copy()
     sub['state_upper'] = sub['state'].str.upper()
 
-    if dim_state is not None and {'lat', 'lon'}.issubset(dim_state.columns):
-        coord_df = dim_state[['state', 'lat', 'lon']].copy()
-        coord_df['state_upper'] = coord_df['state'].str.upper()
-        coord_df = coord_df[['state_upper', 'lat', 'lon']].drop_duplicates()
-    else:
-        coord_df = pd.DataFrame.from_dict(US_STATE_CENTROIDS, orient='index', columns=['lat', 'lon']).reset_index()
-        coord_df.rename(columns={'index': 'state_upper'}, inplace=True)
-
+    coord_df = resolve_state_coords(dim_state)
     sub = sub.merge(coord_df, on='state_upper', how='inner')
 
     state_agg = (
         sub.groupby(['state_upper', 'lat', 'lon'], as_index=False)
         .agg(
-            median_onset=('onset_week', 'median'),
-            mean_onset=('onset_week', 'mean'),
+            median_onset=(onset_col, 'median'),
+            mean_onset=(onset_col, 'mean'),
             n_seasons=('season', 'count')
         )
     )
 
     overall_records = []
     subsets = {
-        'All_51_Jurisdictions': state_agg,
-        'CONUS_49_Excl_AK_HI': state_agg[~state_agg['state_upper'].isin(['AK', 'HI'])]
+        'Toàn bộ 51 bang/đặc khu': state_agg,
+        '49 bang lục địa (bỏ AK, HI)': state_agg[~state_agg['state_upper'].isin(['AK', 'HI'])]
     }
 
     for scope_name, df_scope in subsets.items():
@@ -224,7 +291,7 @@ def run_spatial_onset_correlation(milestones_df: pd.DataFrame, dim_state: pd.Dat
             r_lon_p, p_lon_p = pearsonr(df_scope['lon'], df_scope[metric])
 
             overall_records.append({
-                'scopre': scope_name,
+                'scope': scope_name,
                 'metric': metric,
                 'n_states': len(df_scope),
                 'spearman_r_lat': round(float(r_lat_s), 4),
@@ -244,11 +311,11 @@ def run_spatial_onset_correlation(milestones_df: pd.DataFrame, dim_state: pd.Dat
     season_records = []
     conus_sub = sub[~sub['state_upper'].isin(['AK', 'HI'])]
     for season, grp in conus_sub.groupby('season'):
-        if len(grp) < 10:
+        if len(grp) < 10 or grp[onset_col].nunique() < 2:
             continue
 
-        r_lat, p_lat = spearmanr(grp['lat'], grp['onset_week'])
-        r_lon, p_lon = spearmanr(grp['lon'], grp['onset_week'])
+        r_lat, p_lat = spearmanr(grp['lat'], grp[onset_col])
+        r_lon, p_lon = spearmanr(grp['lon'], grp[onset_col])
         season_records.append({
             'season': season,
             'n_states': len(grp),
